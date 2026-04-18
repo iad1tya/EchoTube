@@ -142,7 +142,7 @@ If EchoTube has been useful to you, consider supporting its development.
 <div align="center">
   <a href="https://buymeacoffee.com/iad1tya"><img src="assets/readme/bmac.png" alt="Buy Me a Coffee" width="130"/></a>
   &nbsp;
-  <a href="upi://pay?pa=iad1tya@upi"><img src="assets/readme/upi.svg" alt="UPI" width="100"/></a>
+  <a href="https://intradeus.github.io/http-protocol-redirector/?r=upi://pay?pa=iad1tya@upi&pn=Aditya%20Yadav&am=&tn=Thank%20You"><img src="assets/readme/upi.svg" alt="UPI" width="100"/></a>
 </div>
 
 ### Cryptocurrency
