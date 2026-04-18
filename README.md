@@ -168,6 +168,10 @@ If EchoTube has been useful to you, consider supporting its development.
 
 ---
 
+Thanks to the Flow project (https://github.com/A-EDev/Flow) for the inspiration. It played an important role in helping shape and complete this project.
+
+---
+
 <div align="center">
   Licensed under <a href="License">GPL-3.0</a>
 </div>
