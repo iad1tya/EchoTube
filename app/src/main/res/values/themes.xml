@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.EchoTube" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Enable edge-to-edge -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- OS-level splash screen theme (Android 12+).
+         Background matches the Compose splash screen so there is no white flash.
+         The icon is transparent to avoid a visual clash with the custom logo animation. -->
+    <style name="Theme.EchoTube.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0F0F0F</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_transparent</item>
+        <item name="postSplashScreenTheme">@style/Theme.EchoTube</item>
+    </style>
+</resources>
+
+

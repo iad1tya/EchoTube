@@ -1,0 +1,67 @@
+{
+    "project_info": {
+        "project_number": "000000000000",
+        "project_id": "your-firebase-project-id",
+        "storage_bucket": "your-firebase-project-id.appspot.com"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:replace_with_real_app_id",
+                "android_client_info": {
+                    "package_name": "com.echotube.iad1tya"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "REPLACE_WITH_REAL_FIREBASE_API_KEY"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        },
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:replace_with_real_debug_app_id",
+                "android_client_info": {
+                    "package_name": "com.echotube.iad1tya.debug"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "REPLACE_WITH_REAL_FIREBASE_API_KEY"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        },
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:replace_with_real_nightly_app_id",
+                "android_client_info": {
+                    "package_name": "com.echotube.iad1tya.nightly"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "REPLACE_WITH_REAL_FIREBASE_API_KEY"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}

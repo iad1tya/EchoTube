@@ -1,0 +1,283 @@
+package com.echotube.iad1tya.ui.screens.player.dialogs
+
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.SmartDisplay
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.res.stringResource
+import com.echotube.iad1tya.R
+import com.echotube.iad1tya.data.model.Video
+import com.echotube.iad1tya.player.EnhancedMusicPlayerManager
+import com.echotube.iad1tya.player.EnhancedPlayerManager
+import com.echotube.iad1tya.player.SleepTimerManager
+import com.echotube.iad1tya.ui.components.EchoTubeChaptersBottomSheet
+import com.echotube.iad1tya.ui.components.EchoTubeCommentsBottomSheet
+import com.echotube.iad1tya.ui.components.EchoTubeDescriptionBottomSheet
+import com.echotube.iad1tya.ui.components.EchoTubePlaylistQueueBottomSheet
+import com.echotube.iad1tya.ui.components.SleepTimerSheet
+import com.echotube.iad1tya.ui.components.VideoQuickActionsBottomSheet
+import com.echotube.iad1tya.ui.screens.player.VideoPlayerUiState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.echotube.iad1tya.data.model.Comment
+import com.echotube.iad1tya.ui.screens.player.state.PlayerScreenState
+
+@Composable
+fun PlayerBottomSheetsContainer(
+    screenState: PlayerScreenState,
+    uiState: VideoPlayerUiState,
+    video: Video,
+    completeVideo: Video,
+    comments: List<Comment>,
+    isLoadingComments: Boolean,
+    isLoadingMoreComments: Boolean = false,
+    hasMoreComments: Boolean = false,
+    onLoadMoreComments: (videoId: String) -> Unit = {},
+    context: Context,
+    onPlayAsShort: (String) -> Unit,
+    onPlayAsMusic: (String) -> Unit,
+    onLoadReplies: (Comment) -> Unit = {},
+    onNavigateToChannel: ((String) -> Unit)? = null
+) {
+    // Sorted comments based on filter — pinned comments always first
+    val sortedComments = remember(comments, screenState.isTopComments) {
+        val pinned = comments.filter { it.isPinned }
+        val unpinned = comments.filterNot { it.isPinned }
+        val sortedUnpinned = if (screenState.isTopComments) {
+            unpinned.sortedByDescending { it.likeCount }
+        } else {
+            fun relativeTimeToSeconds(timeStr: String): Long {
+                val lower = timeStr.lowercase().trim()
+                val number = Regex("\\d+").find(lower)?.value?.toLongOrNull() ?: 0L
+                return when {
+                    "second" in lower -> number
+                    "minute" in lower -> number * 60L
+                    "hour"   in lower -> number * 3_600L
+                    "day"    in lower -> number * 86_400L
+                    "week"   in lower -> number * 604_800L
+                    "month"  in lower -> number * 2_592_000L
+                    "year"   in lower -> number * 31_536_000L
+                    else              -> Long.MAX_VALUE
+                }
+            }
+            unpinned.sortedBy { relativeTimeToSeconds(it.publishedTime) }
+        }
+        pinned + sortedUnpinned
+    }
+    
+    val handleTimestampClick: (String) -> Unit = remember {
+        { timestamp ->
+            val parts = timestamp.split(":").map { it.toLongOrNull() ?: 0L }
+            val seconds = when (parts.size) {
+                3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+                2 -> parts[0] * 60 + parts[1]
+                else -> 0L
+            }
+            val ms = seconds * 1000L
+            EnhancedPlayerManager.getInstance().seekTo(ms)
+            
+            screenState.showCommentsSheet = false
+            screenState.showDescriptionSheet = false
+        }
+    }
+    
+    LaunchedEffect(Unit) {
+        SleepTimerManager.attachToPlayer(
+            player = EnhancedPlayerManager.getInstance().getPlayer()
+        ) {
+            EnhancedPlayerManager.getInstance().pause()
+        }
+        SleepTimerManager.attachExitCallback {
+            EnhancedPlayerManager.getInstance().pause()
+            EnhancedMusicPlayerManager.stop()
+            context.stopService(
+                android.content.Intent(context, com.echotube.iad1tya.service.VideoPlayerService::class.java)
+            )
+            context.stopService(
+                android.content.Intent(context, com.echotube.iad1tya.service.Media3MusicService::class.java)
+            )
+            (context as? android.app.Activity)?.finishAndRemoveTask()
+        }
+    }
+
+    // Quick actions sheet
+    if (screenState.showQuickActions) {
+        VideoQuickActionsBottomSheet(
+            video = completeVideo,
+            onDismiss = { screenState.showQuickActions = false },
+            onShare = {
+                screenState.showQuickActions = false
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, completeVideo.title)
+                    putExtra(Intent.EXTRA_TEXT, context.getString(R.string.check_out_video_template, completeVideo.title, completeVideo.id))
+                }
+                context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_video)))
+            },
+            onDownload = {
+                screenState.showQuickActions = false
+                screenState.showDownloadDialog = true
+            },
+            onNotInterested = {
+                screenState.showQuickActions = false
+                Toast.makeText(context, context.getString(R.string.video_marked_not_interested), Toast.LENGTH_SHORT).show()
+            },
+            onChannelClick = onNavigateToChannel,
+        )
+    }
+
+    // Comments Bottom Sheet
+    if (screenState.showCommentsSheet) {
+        EchoTubeCommentsBottomSheet(
+            comments = sortedComments,
+            isLoading = isLoadingComments,
+            isTopSelected = screenState.isTopComments,
+            onFilterChanged = { isTop ->
+                screenState.isTopComments = isTop
+            },
+            onLoadReplies = onLoadReplies,
+            onTimestampClick = handleTimestampClick,
+            isLoadingMore = isLoadingMoreComments,
+            hasMore = hasMoreComments,
+            onLoadMore = { onLoadMoreComments(video.id) },
+            onDismiss = { screenState.showCommentsSheet = false }
+        )
+    }
+
+    // Description Bottom Sheet
+    if (screenState.showDescriptionSheet) {
+        val currentVideo = remember(uiState.streamInfo, video) {
+            val streamInfo = uiState.streamInfo
+            if (streamInfo != null) {
+                Video(
+                    id = streamInfo.id ?: video.id,
+                    title = streamInfo.name ?: video.title,
+                    channelName = streamInfo.uploaderName ?: video.channelName,
+                    channelId = streamInfo.uploaderUrl?.substringAfterLast("/") ?: video.channelId,
+                    thumbnailUrl = streamInfo.thumbnails.maxByOrNull { it.height }?.url ?: video.thumbnailUrl,
+                    duration = streamInfo.duration.toInt(),
+                    viewCount = streamInfo.viewCount,
+                    likeCount = streamInfo.likeCount,
+                    uploadDate = streamInfo.textualUploadDate ?: streamInfo.uploadDate?.run { 
+                        try {
+                            val date = java.util.Date.from(offsetDateTime().toInstant())
+                            val sdf = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                            sdf.format(date)
+                        } catch (e: Exception) {
+                            video.uploadDate
+                        }
+                    } ?: video.uploadDate,
+                    description = streamInfo.description?.content ?: video.description,
+                    channelThumbnailUrl = uiState.channelAvatarUrl ?: video.channelThumbnailUrl
+                )
+            } else {
+                video
+            }
+        }
+
+        EchoTubeDescriptionBottomSheet(
+            video = currentVideo,
+            tags = uiState.streamInfo?.tags ?: emptyList(),
+            onTimestampClick = handleTimestampClick,
+            onDismiss = { screenState.showDescriptionSheet = false }
+        )
+    }
+
+    // Chapters Bottom Sheet
+    if (screenState.showChaptersSheet) {
+        EchoTubeChaptersBottomSheet(
+            chapters = uiState.chapters,
+            currentPosition = screenState.currentPosition,
+            onChapterClick = { newPosition ->
+                EnhancedPlayerManager.getInstance().seekTo(newPosition)
+            },
+            onDismiss = { screenState.showChaptersSheet = false }
+        )
+    }
+
+    // Playlist Queue Bottom Sheet
+    if (screenState.showPlaylistQueueSheet) {
+        val queueVideos by EnhancedPlayerManager.getInstance().queueVideos.collectAsStateWithLifecycle(initialValue = emptyList())
+        val currentQueueIndex by EnhancedPlayerManager.getInstance().currentQueueIndexState.collectAsStateWithLifecycle(initialValue = -1)
+        val playerState by EnhancedPlayerManager.getInstance().playerState.collectAsStateWithLifecycle()
+
+        EchoTubePlaylistQueueBottomSheet(
+            queueVideos = queueVideos,
+            currentQueueIndex = currentQueueIndex,
+            playlistTitle = playerState.queueTitle,
+            onPlayVideoAtIndex = { index ->
+                EnhancedPlayerManager.getInstance().playVideoAtIndex(index)
+            },
+            onDismiss = { screenState.showPlaylistQueueSheet = false }
+        )
+    }
+
+    if (screenState.showSleepTimerSheet) {
+        SleepTimerSheet(
+            onDismiss = { screenState.showSleepTimerSheet = false }
+        )
+    }
+
+    // Shorts/Music Suggestion Dialog
+    if (screenState.showShortsPrompt) {
+        ShortsSuggestionDialog(
+            isMusic = completeVideo.isMusic || 
+                     completeVideo.title.contains("Official Audio", true) || 
+                     completeVideo.title.contains("Lyrics", true),
+            onPlayAsShort = {
+                screenState.showShortsPrompt = false
+                onPlayAsShort(completeVideo.id)
+            },
+            onPlayAsMusic = {
+                screenState.showShortsPrompt = false
+                onPlayAsMusic(completeVideo.id)
+            },
+            onDismiss = { screenState.showShortsPrompt = false }
+        )
+    }
+}
+
+/**
+ * Dialog suggesting to play short video as Shorts or Music
+ */
+@Composable
+fun ShortsSuggestionDialog(
+    isMusic: Boolean,
+    onPlayAsShort: () -> Unit,
+    onPlayAsMusic: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.SmartDisplay, null) },
+        title = {
+            Text(
+                text = stringResource(R.string.play_mode_suggestion_title), 
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Text(stringResource(R.string.play_mode_suggestion_body))
+        },
+        confirmButton = {
+            TextButton(onClick = onPlayAsShort) {
+                Text(stringResource(R.string.shorts_player))
+            }
+        },
+        dismissButton = {
+            Row {
+                if (isMusic) {
+                    TextButton(onClick = onPlayAsMusic) {
+                        Text(stringResource(R.string.music_player))
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        }
+    )
+}

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+    <!-- Required for writing to external Downloads/Movies on API < 29 -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Required for reading local video files on Android 13+ -->
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        android:minSdkVersion="33" />
+    <!-- Optional: allows saving downloads to public Movies/Music folders (survives app uninstall) -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <!-- Required for DLNA/UPnP SSDP device discovery (FOSS casting, no Google services) -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!--
+        Request battery optimization exemption so Android Doze mode does not throttle
+        network access or kill the background playback service.  The app will show a
+        system dialog asking the user to approve the exemption; this is the same approach
+        used by most open-source media players to survive aggressive OEM battery managers.
+        (Referenced in-app via PowerManager.isIgnoringBatteryOptimizations check.)
+    -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application
+        android:name=".EchoTubeApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EchoTube"
+        android:usesCleartextTraffic="true"
+        android:resizeableActivity="true">
+
+        <!--
+            Samsung keep-alive hints (same as NewPipe).
+            Prevents Samsung’s DeX and screen-off battery manager from killing the
+            background playback service on OneUI devices.
+        -->
+        <!-- Tells OEMs (Xiaomi HyperOS, Samsung OneUI) not to force letterboxing on large screens -->
+        <property
+            android:name="android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE"
+            android:value="true" />
+        <property
+            android:name="android.window.PROPERTY_COMPAT_IGNORE_ORIENTATION_REQUEST_WHEN_LOOP_DETECTED"
+            android:value="true" />
+
+        <meta-data
+            android:name="com.samsung.android.keepalive.density"
+            android:value="true" />
+        <meta-data
+            android:name="com.samsung.android.multidisplay.keep_process_alive"
+            android:value="true" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|uiMode"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.EchoTube"
+            android:windowSoftInputMode="adjustResize"
+            android:windowLayoutInDisplayCutoutMode="shortEdges">
+
+            <!-- Deep Links for YouTube URLs -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="www.youtube.com" />
+                <data android:host="youtube.com" />
+                <data android:host="m.youtube.com" />
+                <data android:pathPrefix="/watch" />
+                <data android:pathPrefix="/v" />
+                <data android:pathPrefix="/channel" />
+                <data android:pathPrefix="/c" />
+                <data android:pathPrefix="/user" />
+                <data android:pathPrefix="/results" />
+                <data android:pathPrefix="/shorts" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="youtu.be" />
+            </intent-filter>
+
+            <!-- Share Intent for text/plain -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+        
+        <!-- Music Playback Service for notifications and media controls (Legacy) -->
+        <!-- <service
+            android:name=".service.MusicPlaybackService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+        </service> -->
+
+        <!-- Media3 Music Service -->
+        <service
+            android:name=".service.Media3MusicService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService"/>
+                <action android:name="android.media.browse.MediaBrowserService"/>
+            </intent-filter>
+        </service>
+        
+        <!-- Video Playback Service for background playback and media controls -->
+        <service
+            android:name=".service.VideoPlayerService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </service>
+
+        <!-- EchoTube Parallel Download Service -->
+        <service
+            android:name=".data.video.downloader.EchoTubeDownloadService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync">
+        </service>
+
+        <!-- ExoPlayer Download Service -->
+        <service
+            android:name=".service.ExoDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync">
+            <intent-filter>
+                <action android:name="androidx.media3.exoplayer.downloadService.action.INIT"/>
+            </intent-filter>
+        </service>
+        
+        <!-- Media button receiver -->
+        <receiver android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+        
+        <!-- Notification action receiver for downloads and other actions -->
+        <receiver 
+            android:name=".notification.NotificationActionReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.echotube.iad1tya.action.CANCEL_DOWNLOAD" />
+                <action android:name="com.echotube.iad1tya.action.RETRY_DOWNLOAD" />
+                <action android:name="com.echotube.iad1tya.action.PAUSE_DOWNLOAD" />
+                <action android:name="com.echotube.iad1tya.action.RESUME_DOWNLOAD" />
+                <action android:name="com.echotube.iad1tya.action.DISMISS_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Time Management Reminder Receiver -->
+        <receiver
+            android:name=".notification.ReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Launcher alias (single fixed app icon) -->
+        <activity-alias
+            android:name=".IconEchoTubeRed"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+
+</manifest>
+
