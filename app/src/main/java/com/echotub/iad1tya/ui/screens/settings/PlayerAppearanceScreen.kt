@@ -218,7 +218,7 @@ fun PlayerAppearanceScreen(
 
 
 @Composable
-fun SettingsItem(
+private fun SettingsItem(
     icon: androidx.compose.ui.graphics.painter.Painter,
     title: String,
     subtitle: String,
@@ -260,7 +260,7 @@ fun SettingsItem(
 }
 
 @Composable
-fun SettingsToggleItem(
+private fun SettingsToggleItem(
     icon: androidx.compose.ui.graphics.painter.Painter,
     title: String,
     subtitle: String,
