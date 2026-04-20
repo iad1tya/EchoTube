@@ -17,8 +17,14 @@ class BackgroundServiceManager {
     
     /**
      * Start background service for persistent playback.
+     * Only starts if backgroundPlayEnabled is true.
      */
-    fun startService(context: Context?, videoId: String, title: String, channel: String, thumbnail: String) {
+    fun startService(context: Context?, videoId: String, title: String, channel: String, thumbnail: String, backgroundPlayEnabled: Boolean) {
+        if (!backgroundPlayEnabled) {
+            Log.d(TAG, "Background play disabled, skipping service start")
+            return
+        }
+        
         context?.let { ctx ->
             val intent = Intent(ctx, VideoPlayerService::class.java).apply {
                 putExtra(VideoPlayerService.EXTRA_VIDEO_ID, videoId)

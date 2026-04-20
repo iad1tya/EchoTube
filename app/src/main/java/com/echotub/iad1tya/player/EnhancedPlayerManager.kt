@@ -742,6 +742,12 @@ class EnhancedPlayerManager private constructor() {
                     Log.d(TAG, "attachVideoSurface: surface back and player IDLE — calling prepare()")
                     p.prepare()
                     if (p.playWhenReady) p.play()
+                } else {
+                    // Surface reattached while media is ready (e.g., app resume after minimize)
+                    // Force a frame render by seeking to current position
+                    val currentPos = p.currentPosition
+                    Log.d(TAG, "attachVideoSurface: surface reattached — seeking to $currentPos to force frame render")
+                    p.seekTo(currentPos)
                 }
             }
         }
@@ -800,8 +806,14 @@ class EnhancedPlayerManager private constructor() {
     fun getCacheSize(): Long = cacheManager?.getCacheSize() ?: 0L
     fun clearCache() = cacheManager?.clearCache()
     
-    fun startBackgroundService(videoId: String, title: String, channel: String, thumbnail: String) =
-        backgroundServiceManager.startService(appContext, videoId, title, channel, thumbnail)
+    fun startBackgroundService(videoId: String, title: String, channel: String, thumbnail: String) {
+        appContext?.let { ctx ->
+            scope.launch {
+                val backgroundPlayEnabled = PlayerPreferences(ctx).backgroundPlayEnabled.first()
+                backgroundServiceManager.startService(ctx, videoId, title, channel, thumbnail, backgroundPlayEnabled)
+            }
+        }
+    }
     
     fun stopBackgroundService() = backgroundServiceManager.stopService(appContext)
 
