@@ -651,12 +651,18 @@ class VideoPlayerViewModel @Inject constructor(
                                     }
                                 }
 
-                                // Fetch stream sizes
+                                // Fetch stream sizes with client fallback
                                 val sizesDeferred = async(PerformanceDispatcher.networkIO) {
                                     withTimeoutOrNull(8000L) {
                                         try {
-                                            val playerResult = YouTube.player(videoId, client = YouTubeClient.MOBILE)
-                                            playerResult.getOrNull()?.let { playerResponse ->
+                                            // Try MOBILE client first, then fallback to WEB
+                                            var playerResponse = YouTube.player(videoId, client = YouTubeClient.MOBILE).getOrNull()
+                                            if (playerResponse == null) {
+                                                Log.d("VideoPlayerViewModel", "MOBILE client failed for stream sizes, trying WEB client")
+                                                playerResponse = YouTube.player(videoId, client = YouTubeClient.WEB).getOrNull()
+                                            }
+                                            
+                                            playerResponse?.let { 
                                                 val sizes = mutableMapOf<String, Long>()
 
                                                 val audioFormats = playerResponse.streamingData

@@ -52,6 +52,10 @@ class PlayerErrorHandler(
     companion object {
         private const val TAG = "PlayerErrorHandler"
     }
+    
+    // Track stream extraction retry attempts (for client fallback)
+    private var extractionRetryCount = 0
+    private var lastExtractedVideoId: String? = null
 
     // ── Public entry point ────────────────────────────────────────────────────
 
@@ -249,12 +253,15 @@ class PlayerErrorHandler(
     }
 
     private fun handleStreamExpired(reason: String) {
-        Log.w(TAG, "Stream expired ($reason) — requesting full extractor reload")
+        Log.w(TAG, "Stream expired ($reason) — requesting full extractor reload with fallback clients")
+        PlayerDiagnostics.logWarning(TAG, "Stream expired ($reason) — extractor reload triggered (may retry with fallback YouTube client)")
         stateFlow.value = stateFlow.value.copy(
             isBuffering = true,
             error = null,
             recoveryAttempted = true
         )
+        // Reset retry counter on new extraction attempt so fallback clients can be tried
+        extractionRetryCount = 0
         onStreamExpired()
     }
 
@@ -265,6 +272,19 @@ class PlayerErrorHandler(
         val errorMessage = error.message ?: ""
         val causeMessage = error.cause?.message ?: ""
         val fullErrorInfo = "$errorMessage $causeMessage"
+
+        // Detect YouTube extraction-related errors (device-specific incompatibilities)
+        if (fullErrorInfo.contains("YouTube", ignoreCase = true) ||
+            fullErrorInfo.contains("format", ignoreCase = true) ||
+            error.cause?.javaClass?.simpleName?.contains("Extraction") == true ||
+            error.cause?.javaClass?.simpleName?.contains("YouTube") == true
+        ) {
+            Log.w(TAG, "YouTube extraction format error detected — may require client fallback. Error: $fullErrorInfo")
+            PlayerDiagnostics.logWarning(TAG, "YouTube format incompatibility detected (device-specific) — triggering extractor reload with fallback")
+            getCurrentVideoStream()?.getContent()?.let { markStreamFailed(it) }
+            handleStreamExpired("youtube-format-error")
+            return
+        }
 
         // UnrecognizedInputFormatException → mark stream and try alternative
         if (fullErrorInfo.contains("UnrecognizedInputFormatException", ignoreCase = true) ||
@@ -328,12 +348,16 @@ class PlayerErrorHandler(
             return
         }
 
-        // YouTube "data changed" keyword in error message
+        // YouTube "data changed" keyword in error message or format-related errors
         if (fullErrorInfo.contains("YouTube data changed", ignoreCase = true) ||
             fullErrorInfo.contains("data changed", ignoreCase = true) ||
+            fullErrorInfo.contains("YouTube may have changed", ignoreCase = true) ||
+            fullErrorInfo.contains("format", ignoreCase = true) ||
             (fullErrorInfo.contains("403") || fullErrorInfo.contains("410"))
         ) {
-            PlayerDiagnostics.logWarning(TAG, "YouTube data-changed pattern detected in IO error — triggering extractor reload")
+            Log.w(TAG, "YouTube format/data-changed error detected in IO path — triggering extractor reload with fallback clients")
+            PlayerDiagnostics.logWarning(TAG, "YouTube extraction error detected (may be device-specific) — triggering reload with fallback clients")
+            getCurrentVideoStream()?.getContent()?.let { markStreamFailed(it) }
             handleStreamExpired("data-changed-in-io")
             return
         }
