@@ -45,6 +45,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.echotube.iad1tya.R
+import com.echotube.iad1tya.data.local.PlayerPreferences
+import com.echotube.iad1tya.data.local.ShortsAutoScrollMode
 import com.echotube.iad1tya.data.model.Video
 import com.echotube.iad1tya.data.model.toShortVideo
 import android.support.v4.media.session.MediaSessionCompat
@@ -61,6 +63,9 @@ fun ShortVideoPage(
     video: Video,
     isActive: Boolean,
     pageIndex: Int,
+    shortsAutoScrollEnabled: Boolean = false,
+    shortsAutoScrollMode: ShortsAutoScrollMode = ShortsAutoScrollMode.FIXED_INTERVAL,
+    shortsAutoScrollIntervalSeconds: Int = 10,
     viewModel: ShortsViewModel,
     onBack: () -> Unit,
     onChannelClick: () -> Unit,
@@ -75,6 +80,7 @@ fun ShortVideoPage(
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val playerPool = remember { ShortsPlayerPool.getInstance() }
+    val playerPreferences = remember(context) { PlayerPreferences(context) }
 
     // Dynamic colors
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -655,6 +661,14 @@ fun ShortVideoPage(
     if (showShortsOptionsSheet) {
         ShortsOptionsSheet(
             isLoadingStreams = isLoadingStreams,
+            autoScrollEnabled = shortsAutoScrollEnabled,
+            autoScrollMode = shortsAutoScrollMode,
+            autoScrollIntervalSeconds = shortsAutoScrollIntervalSeconds,
+            onAutoScrollToggle = { enabled ->
+                scope.launch {
+                    playerPreferences.setShortsAutoScrollEnabled(enabled)
+                }
+            },
             onWantMore = {
                 showShortsOptionsSheet = false
                 onWantMore()
@@ -770,6 +784,10 @@ fun ShortVideoPage(
 @Composable
 private fun ShortsOptionsSheet(
     isLoadingStreams: Boolean,
+    autoScrollEnabled: Boolean,
+    autoScrollMode: ShortsAutoScrollMode,
+    autoScrollIntervalSeconds: Int,
+    onAutoScrollToggle: (Boolean) -> Unit,
     onWantMore: () -> Unit,
     onNotInterested: () -> Unit,
     onDislikeClick: () -> Unit = {},
@@ -903,6 +921,57 @@ private fun ShortsOptionsSheet(
             }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
+
+            Surface(
+                onClick = { onAutoScrollToggle(!autoScrollEnabled) },
+                color = Color.Transparent,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Timer,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.shorts_auto_scroll),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (autoScrollEnabled) {
+                                when (autoScrollMode) {
+                                    ShortsAutoScrollMode.FIXED_INTERVAL -> stringResource(
+                                        R.string.shorts_auto_scroll_summary_fixed,
+                                        autoScrollIntervalSeconds
+                                    )
+                                    ShortsAutoScrollMode.VIDEO_COMPLETION -> stringResource(
+                                        R.string.shorts_auto_scroll_summary_completion
+                                    )
+                                }
+                            } else {
+                                stringResource(R.string.shorts_auto_scroll_off)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = autoScrollEnabled,
+                        onCheckedChange = onAutoScrollToggle
+                    )
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp))
+
             Surface(
                 onClick = onAudioTrackClick,
                 color = Color.Transparent,

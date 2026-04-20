@@ -52,6 +52,9 @@ class PlayerPreferences(private val context: Context) {
         // Shorts quality preferences
         val SHORTS_QUALITY_WIFI = stringPreferencesKey("shorts_quality_wifi")
         val SHORTS_QUALITY_CELLULAR = stringPreferencesKey("shorts_quality_cellular")
+        val SHORTS_AUTO_SCROLL_ENABLED = booleanPreferencesKey("shorts_auto_scroll_enabled")
+        val SHORTS_AUTO_SCROLL_MODE = stringPreferencesKey("shorts_auto_scroll_mode")
+        val SHORTS_AUTO_SCROLL_INTERVAL_SECONDS = intPreferencesKey("shorts_auto_scroll_interval_seconds")
         
         // UI preferences
         val GRID_ITEM_SIZE = stringPreferencesKey("grid_item_size")
@@ -512,6 +515,40 @@ class PlayerPreferences(private val context: Context) {
     suspend fun setShortsQualityCellular(quality: VideoQuality) {
         context.playerPreferencesDataStore.edit { preferences ->
             preferences[Keys.SHORTS_QUALITY_CELLULAR] = quality.label
+        }
+    }
+
+    // Shorts auto-scroll preferences
+    val shortsAutoScrollEnabled: Flow<Boolean> = context.playerPreferencesDataStore.data
+        .map { preferences ->
+            preferences[Keys.SHORTS_AUTO_SCROLL_ENABLED] ?: false
+        }
+
+    val shortsAutoScrollMode: Flow<ShortsAutoScrollMode> = context.playerPreferencesDataStore.data
+        .map { preferences ->
+            ShortsAutoScrollMode.fromString(preferences[Keys.SHORTS_AUTO_SCROLL_MODE])
+        }
+
+    val shortsAutoScrollIntervalSeconds: Flow<Int> = context.playerPreferencesDataStore.data
+        .map { preferences ->
+            (preferences[Keys.SHORTS_AUTO_SCROLL_INTERVAL_SECONDS] ?: 10).coerceIn(5, 20)
+        }
+
+    suspend fun setShortsAutoScrollEnabled(enabled: Boolean) {
+        context.playerPreferencesDataStore.edit { preferences ->
+            preferences[Keys.SHORTS_AUTO_SCROLL_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setShortsAutoScrollMode(mode: ShortsAutoScrollMode) {
+        context.playerPreferencesDataStore.edit { preferences ->
+            preferences[Keys.SHORTS_AUTO_SCROLL_MODE] = mode.name
+        }
+    }
+
+    suspend fun setShortsAutoScrollIntervalSeconds(seconds: Int) {
+        context.playerPreferencesDataStore.edit { preferences ->
+            preferences[Keys.SHORTS_AUTO_SCROLL_INTERVAL_SECONDS] = seconds.coerceIn(5, 20)
         }
     }
     
@@ -1267,6 +1304,16 @@ enum class HomeViewMode {
 enum class PlayerRelatedCardStyle {
     COMPACT,    
     FULL_WIDTH 
+}
+
+enum class ShortsAutoScrollMode {
+    FIXED_INTERVAL,
+    VIDEO_COMPLETION;
+
+    companion object {
+        fun fromString(name: String?): ShortsAutoScrollMode =
+            values().find { it.name == name } ?: FIXED_INTERVAL
+    }
 }
 
 

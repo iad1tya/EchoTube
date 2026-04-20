@@ -16,11 +16,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.common.Player
 import com.echotube.iad1tya.R
 import com.echotube.iad1tya.data.model.ShortVideo
 import com.echotube.iad1tya.data.model.toVideo
 import com.echotube.iad1tya.player.shorts.ShortsPlayerPool
 import com.echotube.iad1tya.data.local.PlayerPreferences
+import com.echotube.iad1tya.data.local.ShortsAutoScrollMode
 import com.echotube.iad1tya.ui.components.EchoTubeCommentsBottomSheet
 import com.echotube.iad1tya.ui.components.EchoTubeDescriptionBottomSheet
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -76,6 +79,9 @@ fun ShortsScreen(
     }
     val shortsQualityWifi by audioLangPref.shortsQualityWifi.collectAsState(initial = com.echotube.iad1tya.data.local.VideoQuality.Q_720p)
     val shortsQualityCellular by audioLangPref.shortsQualityCellular.collectAsState(initial = com.echotube.iad1tya.data.local.VideoQuality.Q_480p)
+    val shortsAutoScrollEnabled by audioLangPref.shortsAutoScrollEnabled.collectAsState(initial = false)
+    val shortsAutoScrollMode by audioLangPref.shortsAutoScrollMode.collectAsState(initial = ShortsAutoScrollMode.FIXED_INTERVAL)
+    val shortsAutoScrollIntervalSeconds by audioLangPref.shortsAutoScrollIntervalSeconds.collectAsState(initial = 10)
     val shortsTargetHeight by remember(isWifi, shortsQualityWifi, shortsQualityCellular) {
         derivedStateOf { if (isWifi) shortsQualityWifi.height else shortsQualityCellular.height }
     }
@@ -135,6 +141,8 @@ fun ShortsScreen(
                     initialPage = uiState.currentIndex,
                     pageCount = { uiState.shorts.size }
                 )
+                var autoScrollInProgress by remember { mutableStateOf(false) }
+                var lastAutoScrollVideoId by remember { mutableStateOf<String?>(null) }
 
                 // Track page changes
                 LaunchedEffect(pagerState.currentPage) {
@@ -256,6 +264,93 @@ fun ShortsScreen(
                     playerPool.releaseUnusedPlayers(settled)
                 }
 
+                // Auto-scroll engine: supports fixed timer and on-completion modes.
+                LaunchedEffect(
+                    pagerState.settledPage,
+                    shortsAutoScrollEnabled,
+                    shortsAutoScrollMode,
+                    shortsAutoScrollIntervalSeconds,
+                    uiState.shorts
+                ) {
+                    if (!shortsAutoScrollEnabled) return@LaunchedEffect
+
+                    val page = pagerState.settledPage
+                    val currentShort = uiState.shorts.getOrNull(page) ?: return@LaunchedEffect
+                    if (page >= uiState.shorts.lastIndex) return@LaunchedEffect
+
+                    var watchedPlayingMs = 0L
+                    var lastPositionMs = 0L
+                    var sawVideoStart = false
+                    var sawVideoEnd = false
+
+                    val intervalMs = shortsAutoScrollIntervalSeconds.coerceIn(5, 20) * 1_000L
+
+                    while (isActive && pagerState.settledPage == page) {
+                        if (pagerState.isScrollInProgress && !autoScrollInProgress) {
+                            // Manual user scrolling always overrides pending auto-scroll.
+                            break
+                        }
+
+                        val liveShort = uiState.shorts.getOrNull(page) ?: break
+                        if (liveShort.id != currentShort.id) break
+
+                        val player = ShortsPlayerPool.getInstance().getPlayerForIndex(page)
+                        if (player != null) {
+                            val durationMs = player.duration.coerceAtLeast(0L)
+                            val positionMs = player.currentPosition.coerceAtLeast(0L)
+                            val isBuffering = player.playbackState == Player.STATE_BUFFERING
+                            val isPlaying = player.isPlaying
+
+                            if (!sawVideoStart && (positionMs > 0L || player.playbackState == Player.STATE_READY)) {
+                                sawVideoStart = true
+                            }
+
+                            if (isPlaying && !isBuffering) {
+                                val delta = (positionMs - lastPositionMs).coerceIn(0L, 750L)
+                                watchedPlayingMs += delta
+                            }
+
+                            val endThresholdMs = if (durationMs in 1L..5_000L) 80L else 250L
+                            if (durationMs > 0L && positionMs >= (durationMs - endThresholdMs)) {
+                                sawVideoEnd = true
+                            }
+
+                            val shouldScroll = when (shortsAutoScrollMode) {
+                                ShortsAutoScrollMode.FIXED_INTERVAL -> {
+                                    watchedPlayingMs >= intervalMs || (durationMs in 1L until intervalMs && sawVideoEnd)
+                                }
+                                ShortsAutoScrollMode.VIDEO_COMPLETION -> sawVideoEnd
+                            }
+
+                            if (
+                                shouldScroll &&
+                                !autoScrollInProgress &&
+                                lastAutoScrollVideoId != currentShort.id
+                            ) {
+                                autoScrollInProgress = true
+                                lastAutoScrollVideoId = currentShort.id
+                                try {
+                                    pagerState.animateScrollToPage(page + 1)
+                                } finally {
+                                    autoScrollInProgress = false
+                                }
+                                break
+                            }
+
+                            if (sawVideoEnd && durationMs > 0L && positionMs < (durationMs / 3)) {
+                                // Video looped; if no trigger yet, reset timer state for next loop.
+                                if (shortsAutoScrollMode == ShortsAutoScrollMode.FIXED_INTERVAL && watchedPlayingMs < intervalMs) {
+                                    sawVideoStart = true
+                                }
+                            }
+
+                            lastPositionMs = positionMs
+                        }
+
+                        kotlinx.coroutines.delay(250L)
+                    }
+                }
+
                 LaunchedEffect(shortsTargetHeight) {
                     val newHeight = shortsTargetHeight
                     if (newHeight == prevShortsTargetHeight.value) return@LaunchedEffect
@@ -332,6 +427,9 @@ fun ShortsScreen(
                         video = short.toVideo(),
                         isActive = isActive,
                         pageIndex = page,
+                        shortsAutoScrollEnabled = shortsAutoScrollEnabled,
+                        shortsAutoScrollMode = shortsAutoScrollMode,
+                        shortsAutoScrollIntervalSeconds = shortsAutoScrollIntervalSeconds,
                         viewModel = viewModel,
                         onBack = onBack,
                         onChannelClick = { onChannelClick(short.channelId) },

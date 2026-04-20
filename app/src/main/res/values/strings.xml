@@ -1165,6 +1165,10 @@
     <!-- Shorts Player Features -->
     <string name="shorts_audio_track">Audio Track</string>
     <string name="shorts_quality">Quality</string>
+    <string name="shorts_auto_scroll">Auto-scroll</string>
+    <string name="shorts_auto_scroll_off">Off</string>
+    <string name="shorts_auto_scroll_summary_fixed">Every %1$d seconds</string>
+    <string name="shorts_auto_scroll_summary_completion">After full video completion</string>
     <string name="shorts_no_audio_tracks">No audio tracks available</string>
     <string name="shorts_audio_original">Original</string>
     <string name="shorts_audio_dubbed">Dubbed</string>
@@ -1175,6 +1179,20 @@
     <string name="shorts_quality_warning">Higher quality uses more data. Shorts use vertical video streams.</string>
     <string name="shorts_quality_wifi_header">Shorts Wi-Fi Quality</string>
     <string name="shorts_quality_cellular_header">Shorts Cellular Quality</string>
+
+    <!-- Shorts Auto-scroll Settings -->
+    <string name="shorts_auto_scroll_settings_title">Shorts Auto-scroll</string>
+    <string name="shorts_auto_scroll_settings_subtitle">Auto-advance behavior for Shorts</string>
+    <string name="shorts_auto_scroll_description">Choose how Shorts should automatically move to the next video. Manual swipes always override auto-scroll.</string>
+    <string name="shorts_auto_scroll_toggle_subtitle">Enable automatic transition to the next Short</string>
+    <string name="shorts_auto_scroll_mode_title">Mode</string>
+    <string name="shorts_auto_scroll_mode_fixed">Fixed time interval</string>
+    <string name="shorts_auto_scroll_mode_fixed_subtitle">Scroll after N seconds of active playback</string>
+    <string name="shorts_auto_scroll_mode_completion">After video completes</string>
+    <string name="shorts_auto_scroll_mode_completion_subtitle">Scroll when the current Short reaches the end</string>
+    <string name="shorts_auto_scroll_interval_title">Interval</string>
+    <string name="shorts_auto_scroll_interval_value">%1$d seconds</string>
+    <string name="shorts_auto_scroll_interval_hint">Range: 5 to 20 seconds (default 10). Very short videos scroll as soon as they end.</string>
 
     <!-- Video Queue / Play Next -->
     <string name="play_next_video">Play Next</string>

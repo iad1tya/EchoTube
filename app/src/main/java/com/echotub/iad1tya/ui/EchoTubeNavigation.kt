@@ -271,6 +271,7 @@ fun NavGraphBuilder.flowAppGraph(
             onNavigateToSponsorBlock = { navController.navigate("settings/sponsorblock") },
             onNavigateToVideoQuality = { navController.navigate("settings/video_quality") },
             onNavigateToShortsQuality = { navController.navigate("settings/shorts_quality") },
+            onNavigateToShortsAutoScroll = { navController.navigate("settings/shorts_auto_scroll") },
             onNavigateToContentSettings = { navController.navigate("settings/content") },
             onNavigateToBufferSettings = { navController.navigate("settings/buffer") },
             onNavigateToSearchHistory = { navController.navigate("settings/search_history") },
@@ -333,6 +334,14 @@ fun NavGraphBuilder.flowAppGraph(
         currentRoute.value = "settings/shorts_quality"
         showBottomNav.value = false
         com.echotube.iad1tya.ui.screens.settings.ShortsVideoQualitySettingsScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable("settings/shorts_auto_scroll") {
+        currentRoute.value = "settings/shorts_auto_scroll"
+        showBottomNav.value = false
+        com.echotube.iad1tya.ui.screens.settings.ShortsAutoScrollSettingsScreen(
             onNavigateBack = { navController.popBackStack() }
         )
     }
