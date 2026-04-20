@@ -585,9 +585,11 @@ private fun TopicCategoryExpandableCard(
                     modifier = Modifier.size(44.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = category.icon,
-                            fontSize = 22.sp
+                        Icon(
+                            imageVector = topicCategoryIcon(category.name),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -646,6 +648,23 @@ private fun TopicCategoryExpandableCard(
                 }
             }
         }
+    }
+}
+
+private fun topicCategoryIcon(categoryName: String): ImageVector {
+    val normalized = categoryName.lowercase()
+    return when {
+        "gaming" in normalized -> Icons.Outlined.SportsEsports
+        "music" in normalized -> Icons.Outlined.MusicNote
+        "technology" in normalized -> Icons.Outlined.Computer
+        "entertainment" in normalized -> Icons.Outlined.Movie
+        "education" in normalized -> Icons.Outlined.School
+        "health" in normalized || "fitness" in normalized -> Icons.Outlined.FitnessCenter
+        "lifestyle" in normalized -> Icons.Outlined.Home
+        "creative" in normalized -> Icons.Outlined.Palette
+        "science" in normalized || "nature" in normalized -> Icons.Outlined.Science
+        "news" in normalized || "current events" in normalized -> Icons.Outlined.Article
+        else -> Icons.Outlined.Topic
     }
 }
 
