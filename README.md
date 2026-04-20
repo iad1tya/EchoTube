@@ -39,6 +39,7 @@ EchoTube delivers a fast and modern video experience powered by a fully local re
 Playback, controls, accessibility, and offline support.
 
 - High-quality playback via ExoPlayer (Media3) with resolution switching (1080p, 720p, 480p, 360p)
+- Autoscroll Shorts
 - SponsorBlock auto-skips sponsors, intros, outros, and filler
 - Return YouTube Dislikes shows the dislike count on videos
 - DeArrow replaces clickbait thumbnails and titles with community alternatives
