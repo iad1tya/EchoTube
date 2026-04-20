@@ -73,6 +73,7 @@ fun PlayerSettingsScreen(
     
     val autoplayEnabled by playerPreferences.autoplayEnabled.collectAsState(initial = true)
     val skipSilenceEnabled by playerPreferences.skipSilenceEnabled.collectAsState(initial = false)
+    val returnYouTubeDislikeEnabled by playerPreferences.returnYouTubeDislikeEnabled.collectAsState(initial = true)
     val deArrowEnabled by playerPreferences.deArrowEnabled.collectAsState(initial = false)
     val manualPipButtonEnabled by playerPreferences.manualPipButtonEnabled.collectAsState(initial = true)
     val backgroundPlayEnabled by playerPreferences.backgroundPlayEnabled.collectAsState(initial = false)
@@ -234,6 +235,14 @@ fun PlayerSettingsScreen(
                         subtitle = stringResource(R.string.player_settings_skip_silence_subtitle),
                         checked = skipSilenceEnabled,
                         onCheckedChange = { coroutineScope.launch { playerPreferences.setSkipSilenceEnabled(it) } }
+                    )
+                    HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    SettingsSwitchItem(
+                        icon = Icons.Outlined.ThumbDown,
+                        title = stringResource(R.string.player_settings_return_youtube_dislike),
+                        subtitle = stringResource(R.string.player_settings_return_youtube_dislike_subtitle),
+                        checked = returnYouTubeDislikeEnabled,
+                        onCheckedChange = { coroutineScope.launch { playerPreferences.setReturnYouTubeDislikeEnabled(it) } }
                     )
                     HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     SettingsSwitchItem(

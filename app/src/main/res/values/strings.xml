@@ -578,6 +578,8 @@
     <string name="player_settings_autoplay_subtitle">Automatically play the next video</string>
     <string name="player_settings_skip_silence">Skip Silence</string>
     <string name="player_settings_skip_silence_subtitle">Skip parts with no audio</string>
+    <string name="player_settings_return_youtube_dislike">Return YouTube Dislike</string>
+    <string name="player_settings_return_youtube_dislike_subtitle">Show community dislike counts (powered by returnyoutubedislike.com)</string>
     <string name="player_settings_remember_speed">Remember Playback Speed</string>
     <string name="player_settings_remember_speed_subtitle">Apply the last used playback speed to videos</string>
     <string name="player_settings_custom_speeds_title">Custom Playback Speeds</string>

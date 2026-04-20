@@ -24,6 +24,7 @@ class PlayerPreferences(private val context: Context) {
         val TRENDING_REGION = stringPreferencesKey("trending_region")
         val SKIP_SILENCE_ENABLED = booleanPreferencesKey("skip_silence_enabled")        
         val SPONSOR_BLOCK_ENABLED = booleanPreferencesKey("sponsor_block_enabled")        
+        val RETURN_YOUTUBE_DISLIKE_ENABLED = booleanPreferencesKey("return_youtube_dislike_enabled")
         val AUTO_PIP_ENABLED = booleanPreferencesKey("auto_pip_enabled")
         val MANUAL_PIP_BUTTON_ENABLED = booleanPreferencesKey("manual_pip_button_enabled")
         val STABLE_VOLUME_ENABLED = booleanPreferencesKey("stable_volume_enabled")
@@ -583,6 +584,18 @@ class PlayerPreferences(private val context: Context) {
     suspend fun setSponsorBlockEnabled(enabled: Boolean) {
         context.playerPreferencesDataStore.edit { preferences ->
             preferences[Keys.SPONSOR_BLOCK_ENABLED] = enabled
+        }
+    }
+
+    // Return YouTube Dislike
+    val returnYouTubeDislikeEnabled: Flow<Boolean> = context.playerPreferencesDataStore.data
+        .map { preferences ->
+            preferences[Keys.RETURN_YOUTUBE_DISLIKE_ENABLED] ?: true
+        }
+
+    suspend fun setReturnYouTubeDislikeEnabled(enabled: Boolean) {
+        context.playerPreferencesDataStore.edit { preferences ->
+            preferences[Keys.RETURN_YOUTUBE_DISLIKE_ENABLED] = enabled
         }
     }
 
