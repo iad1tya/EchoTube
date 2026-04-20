@@ -36,7 +36,7 @@ fun SectionHeader(text: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsItem(
-    icon: ImageVector?,
+    icon: Any?,
     title: String,
     subtitle: String,
     onClick: () -> Unit
@@ -48,13 +48,23 @@ fun SettingsItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.width(16.dp))
+        when (icon) {
+            is ImageVector -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+            is Painter -> {
+                Icon(
+                    painter = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+            }
         }
         Column {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)

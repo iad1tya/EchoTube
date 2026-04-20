@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -550,7 +551,7 @@ fun SettingsScreen(
                     )
                     HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     SettingsItem(
-                        icon = Icons.Outlined.AutoFixHigh,
+                        icon = painterResource(com.echotube.iad1tya.R.drawable.ic_block),
                         title = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.player_settings_sponsorblock),
                         subtitle = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_sponsorblock_subtitle),
                         onClick = onNavigateToSponsorBlock
@@ -849,9 +850,19 @@ fun SettingsScreen(
         }
         AlertDialog(
             onDismissRequest = { showRegionDialog = false },
+            shape = RoundedCornerShape(28.dp),
             title = { Text(androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_region_dialog_title)) },
             text = {
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Choose the region used for trending and recommendations.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
                     OutlinedTextField(
                         value = regionSearchQuery,
                         onValueChange = { regionSearchQuery = it },
@@ -860,29 +871,30 @@ fun SettingsScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(Modifier.heightIn(max = 260.dp)) {
+
+                    LazyColumn(Modifier.heightIn(max = 320.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(filteredRegions.size) { index ->
                             val (code, name) = filteredRegions[index]
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        coroutineScope.launch { playerPreferences.setTrendingRegion(code); showRegionDialog = false }
+                            RegionOptionCard(
+                                code = code,
+                                name = name,
+                                isSelected = currentRegion == code,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        playerPreferences.setTrendingRegion(code)
+                                        showRegionDialog = false
                                     }
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(selected = currentRegion == code, onClick = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(name)
-                            }
+                                }
+                            )
                         }
                     }
                 }
             },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { showRegionDialog = false }) { Text(androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.cancel)) } }
+            confirmButton = {
+                TextButton(onClick = { showRegionDialog = false }) {
+                    Text(androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.btn_close))
+                }
+            }
         )
     }
     
@@ -1020,6 +1032,84 @@ private fun ThemeModeOptionCard(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor.copy(alpha = 0.78f)
+                )
+            }
+
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint = Color.Black
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RegionOptionCard(
+    code: String,
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val containerColor = if (isSelected) {
+        Color(0xFFF5F5F5)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    }
+    val contentColor = if (isSelected) {
+        Color.Black
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(
+            width = if (isSelected) 1.5.dp else 1.dp,
+            color = if (isSelected) Color(0xFFE6E6E6) else MaterialTheme.colorScheme.surfaceVariant
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = contentColor.copy(alpha = 0.12f)
+            ) {
+                Box(
+                    modifier = Modifier.size(44.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.TrendingUp,
+                        contentDescription = null,
+                        tint = contentColor
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = contentColor
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = code,
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor.copy(alpha = 0.78f)
                 )
