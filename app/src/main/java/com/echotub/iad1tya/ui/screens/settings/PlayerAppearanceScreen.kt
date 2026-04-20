@@ -109,12 +109,6 @@ fun PlayerAppearanceScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                SectionHeader(text = stringResource(R.string.player_appearance_header))
-            }
-            
-
-
-            item {
                 Spacer(modifier = Modifier.height(8.dp))
                 SectionHeader(text = stringResource(R.string.player_appearance_gestures_header))
             }

@@ -15,7 +15,6 @@ import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SmartDisplay
 import androidx.compose.material.icons.outlined.ViewAgenda
@@ -30,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -62,7 +60,6 @@ fun ContentSettingsScreen(
     val isShortsShelfEnabled by preferences.shortsShelfEnabled.collectAsState(initial = true)
     val isHomeShortsShelfEnabled by preferences.homeShortsShelfEnabled.collectAsState(initial = true)
     val isShortsNavigationEnabled by preferences.shortsNavigationEnabled.collectAsState(initial = true)
-    val isMusicNavigationEnabled by preferences.musicNavigationEnabled.collectAsState(initial = true)
     val isSearchNavigationEnabled by preferences.searchNavigationEnabled.collectAsState(initial = false)
     val isCategoriesNavigationEnabled by preferences.categoriesNavigationEnabled.collectAsState(initial = false)
     val isContinueWatchingEnabled by preferences.continueWatchingEnabled.collectAsState(initial = true)
@@ -347,18 +344,6 @@ fun ContentSettingsScreen(
                         onCheckedChange = { enabled ->
                             coroutineScope.launch {
                                 preferences.setShortsNavigationEnabled(enabled)
-                            }
-                        }
-                    )
-                    HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    SettingsSwitchItem(
-                        icon = Icons.Outlined.MusicNote,
-                        title = stringResource(R.string.settings_music_nav_tab_title),
-                        subtitle = stringResource(R.string.settings_music_nav_tab_subtitle),
-                        checked = isMusicNavigationEnabled,
-                        onCheckedChange = { enabled ->
-                            coroutineScope.launch {
-                                preferences.setMusicNavigationEnabled(enabled)
                             }
                         }
                     )

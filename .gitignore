@@ -1,0 +1,43 @@
+# macOS
+.DS_Store
+
+# Android/Gradle build outputs
+.gradle/
+build/
+**/build/
+.cxx/
+externalNativeBuild/
+captures/
+
+# Kotlin/Java artifacts
+*.class
+*.jar
+*.war
+*.ear
+*.hprof
+
+# Local machine/project config
+local.properties
+*.keystore
+*.jks
+*.pem
+*.p12
+
+# Firebase/Google service credentials (keep private)
+google-services.json
+**/google-services.json
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Generated release metadata
+output-metadata.json
