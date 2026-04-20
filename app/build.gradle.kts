@@ -25,7 +25,7 @@ android {
         minSdk = 21
         targetSdk = 34
         versionCode = 15
-        versionName = "1.0"
+        versionName = "v1.1"
 
         val poTokenGoogleApiKey = (project.findProperty("poTokenGoogleApiKey") as? String)
             ?: rootLocalProperties.getProperty("poTokenGoogleApiKey")
