@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,8 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -171,7 +174,10 @@ fun DraggablePlayerLayout(
     onDismiss: () -> Unit = {},
     onCollapseGesture: (() -> Unit)? = null,
     onFullscreenGesture: (() -> Unit)? = null,
-    videoAspectRatio: Float = 16f / 9f
+    videoAspectRatio: Float = 16f / 9f,
+    videoTitle: String = "",
+    channelName: String = "",
+    showControls: Boolean = true
 ) {
     val density = LocalDensity.current
     val config = LocalConfiguration.current
@@ -765,6 +771,43 @@ fun DraggablePlayerLayout(
         ) {
             // ── Video surface
             videoContent(Modifier.fillMaxSize())
+
+            // ── Fullscreen title and channel overlay (top-center, synced with controls)
+            if (showImmersiveFullscreen && videoTitle.isNotEmpty() && showControls) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth(0.6f)
+                    ) {
+                        Text(
+                            text = videoTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        if (channelName.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = channelName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.8f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
 
             // ── Mini controls overlay
             val fraction by remember { derivedStateOf { state.expandFraction.value } }

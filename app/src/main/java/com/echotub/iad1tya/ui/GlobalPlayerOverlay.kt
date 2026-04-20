@@ -790,7 +790,10 @@ fun GlobalPlayerOverlay(
                         )
                     }
                 }
-            }
+            },
+            videoTitle = playerUiState.streamInfo?.name ?: video.title,
+            channelName = playerUiState.streamInfo?.uploaderName ?: video.channelName,
+            showControls = screenState.showControls
         )
         
         // Dialogs

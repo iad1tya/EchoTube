@@ -39,6 +39,7 @@ import com.echotube.iad1tya.ui.components.UpdateDialog
 import com.echotube.iad1tya.BuildConfig
 import androidx.activity.SystemBarStyle
 import androidx.activity.result.contract.ActivityResultContracts
+import com.echotube.iad1tya.data.local.PlayerPreferences
 import java.io.File
 
 @AndroidEntryPoint
@@ -403,6 +404,34 @@ class MainActivity : ComponentActivity() {
         wasPlayingWhenPipExited = false  
         if (!isInPictureInPictureMode) {
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+            val pm = com.echotube.iad1tya.player.EnhancedPlayerManager.getInstance()
+            val musicManager = com.echotube.iad1tya.player.EnhancedMusicPlayerManager
+
+            lifecycleScope.launch {
+                val backgroundPlayEnabled = PlayerPreferences(applicationContext).backgroundPlayEnabled.first()
+                val isVideoPlaying = pm.playerState.value.isPlaying && pm.playerState.value.currentVideoId != null
+
+                if (backgroundPlayEnabled) {
+                    // Ensure service handoff exists when user backgrounds the app.
+                    if (isVideoPlaying) {
+                        GlobalPlayerState.currentVideo.value?.let { video ->
+                            pm.startBackgroundService(
+                                videoId = video.id,
+                                title = video.title,
+                                channel = video.channelName,
+                                thumbnail = video.thumbnailUrl
+                            )
+                        }
+                    }
+                } else {
+                    // Background play disabled: stop as soon as app is minimized.
+                    if (isVideoPlaying && !musicManager.playerState.value.isPlaying) {
+                        pm.pause()
+                    }
+                    pm.stopBackgroundService()
+                }
+            }
         }
     }
 

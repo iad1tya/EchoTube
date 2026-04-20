@@ -128,7 +128,7 @@ fun AboutScreen(
             item {
                 AboutSectionContainer(title = "Developer") {
                     AboutRow(
-                        icon = Icons.Outlined.Person,
+                        icon = Icons.Outlined.Code,
                         title = stringResource(R.string.about_creator),
                         subtitle = "Aditya",
                         onClick = { openUrl(context, "https://iad1tya.cyou") }

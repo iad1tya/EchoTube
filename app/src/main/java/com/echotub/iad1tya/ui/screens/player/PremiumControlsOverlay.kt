@@ -279,8 +279,8 @@ fun PremiumControlsOverlay(
                         }
                     }
 
-                    // Sleep Timer
-                    if (overlaySleepTimerEnabled) {
+                    // Sleep Timer (hidden in fullscreen)
+                    if (overlaySleepTimerEnabled && !isFullscreen) {
                         IconButton(
                             onClick = onSleepTimerClick,
                             modifier = Modifier.size(40.dp)
