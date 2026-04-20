@@ -3,6 +3,7 @@ package com.echotube.iad1tya.player
 import android.content.Context
 import android.util.Log
 import android.view.SurfaceHolder
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
@@ -649,7 +650,21 @@ class EnhancedPlayerManager private constructor() {
 
     // ===== Playback Controls =====
     
-    fun play() = player?.play()
+    fun play() {
+        // Update audio focus behavior based on current preference before playing
+        appContext?.let { ctx ->
+            scope.launch {
+                val playDuringCalls = PlayerPreferences(ctx).playDuringCalls.first()
+                val audioAttrs = AudioAttributes.Builder()
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                    .setUsage(C.USAGE_MEDIA)
+                    .build()
+                player?.setAudioAttributes(audioAttrs, !playDuringCalls)
+                Log.d(TAG, "Updated audio focus: playDuringCalls=$playDuringCalls")
+            }
+        }
+        player?.play()
+    }
     fun pause() = player?.pause()
     fun seekTo(position: Long) = player?.seekTo(position)
     

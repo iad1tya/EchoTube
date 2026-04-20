@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.outlined.DesktopWindows
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Language
@@ -259,7 +258,7 @@ fun ContentSettingsScreen(
                     )
                     HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     SettingsSwitchItem(
-                        icon = Icons.Outlined.DesktopWindows,
+                        icon = ImageVector.vectorResource(R.drawable.ic_shorts),
                         title = stringResource(R.string.settings_home_shorts_shelf_title),
                         subtitle = stringResource(R.string.settings_home_shorts_shelf_subtitle),
                         checked = isHomeShortsShelfEnabled,

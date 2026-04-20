@@ -543,7 +543,7 @@
     <string name="content_settings_header_nav_tabs">Navigation Tabs</string>
     <string name="settings_subs_shorts_shelf_title">Subscriptions shorts shelf</string>
     <string name="settings_subs_shorts_shelf_subtitle">Show the horizontal shorts shelf in the subscription feed grid.</string>
-    <string name="settings_home_shorts_shelf_title">Home screen shorts shelf</string>
+    <string name="settings_home_shorts_shelf_title">Disable short on home feed</string>
     <string name="settings_home_shorts_shelf_subtitle">Show the horizontal shorts shelf on the home screen.</string>
     <string name="settings_shorts_nav_tab_title">Shorts tab in navigation</string>
     <string name="settings_shorts_nav_tab_subtitle">Show the Shorts tab in the bottom navigation bar.</string>
