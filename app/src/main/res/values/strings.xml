@@ -357,7 +357,8 @@
     <string name="settings_item_content_prefs">Content Preferences</string>
     <string name="settings_item_content_prefs_subtitle">Block topics you don\'t want to see</string>
     <string name="settings_item_player">Player Settings</string>
-    <string name="settings_item_player_subtitle">Autoplay, Background Play, SponsorBlock</string>
+    <string name="settings_item_player_subtitle">Autoplay and Background Play</string>
+    <string name="settings_item_sponsorblock_subtitle">Segment skipping, actions, and contribution</string>
     <string name="settings_item_quality">Video Quality</string>
     <string name="settings_item_quality_subtitle">Resolution for Wi-Fi and Mobile</string>
     <string name="settings_item_content_display">Content Display</string>

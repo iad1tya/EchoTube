@@ -5,6 +5,7 @@
 .gradle/
 build/
 **/build/
+.buildOutputCleanup
 .cxx/
 externalNativeBuild/
 captures/

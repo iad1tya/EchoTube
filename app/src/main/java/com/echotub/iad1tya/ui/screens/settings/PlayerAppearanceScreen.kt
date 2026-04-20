@@ -54,25 +54,6 @@ fun PlayerAppearanceScreen(
     val currentSliderStyle by playerPreferences.sliderStyle.collectAsState(initial = SliderStyle.DEFAULT)
     val swipeGesturesEnabled by playerPreferences.swipeGesturesEnabled.collectAsState(initial = true)
 
-    // SponsorBlock per-category actions
-    val sbCategoriesAndLabels = listOf(
-        "sponsor"          to R.string.sb_category_sponsor,
-        "intro"            to R.string.sb_category_intro,
-        "outro"            to R.string.sb_category_outro,
-        "selfpromo"        to R.string.sb_category_selfpromo,
-        "interaction"      to R.string.sb_category_interaction,
-        "music_offtopic"   to R.string.sb_category_music_offtopic,
-        "filler"           to R.string.sb_category_filler,
-        "preview"          to R.string.sb_category_preview,
-        "exclusive_access" to R.string.sb_category_exclusive_access
-    )
-    val sbActions = sbCategoriesAndLabels.associate { (category, _) ->
-        category to playerPreferences.sbActionForCategory(category).collectAsState(initial = SponsorBlockAction.SKIP).value
-    }
-    val sbColors = sbCategoriesAndLabels.associate { (category, _) ->
-        category to playerPreferences.sbColorForCategory(category).collectAsState(initial = null).value
-    }
-
 
 
 
@@ -227,37 +208,6 @@ fun PlayerAppearanceScreen(
                             coroutineScope.launch { playerPreferences.setMiniPlayerShowNextPrevControls(enabled) }
                         }
                     )
-                }
-            }
-
-            // SponsorBlock Segment Actions section
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                SectionHeader(text = stringResource(R.string.sb_segments_header))
-            }
-
-            item {
-                SettingsGroup {
-                    sbCategoriesAndLabels.forEachIndexed { index, (category, labelRes) ->
-                        SponsorBlockCategoryRow(
-                            label = stringResource(labelRes),
-                            selectedAction = sbActions[category] ?: SponsorBlockAction.SKIP,
-                            customColorArgb = sbColors[category],
-                            onActionSelected = { action ->
-                                coroutineScope.launch {
-                                    playerPreferences.setSbActionForCategory(category, action)
-                                }
-                            },
-                            onColorChanged = { colorArgb ->
-                                coroutineScope.launch {
-                                    playerPreferences.setSbColorForCategory(category, colorArgb)
-                                }
-                            }
-                        )
-                        if (index < sbCategoriesAndLabels.lastIndex) {
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        }
-                    }
                 }
             }
 

@@ -70,6 +70,7 @@ fun SettingsScreen(
     onNavigateToTimeManagement: () -> Unit,
     onNavigateToImport: () -> Unit,
     onNavigateToPlayerSettings: () -> Unit,
+    onNavigateToSponsorBlock: () -> Unit,
     onNavigateToVideoQuality: () -> Unit,
     onNavigateToShortsQuality: () -> Unit,
     onNavigateToContentSettings: () -> Unit,
@@ -286,6 +287,7 @@ fun SettingsScreen(
         SettingSearchEntry(Icons.Outlined.GridView, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_content_display), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_content_display_subtitle), secAppearance, onNavigateToContentSettings),
         SettingSearchEntry(Icons.Outlined.FilterAlt, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_content_prefs), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_content_prefs_subtitle), secContentPlayback, onNavigateToUserPreferences),
         SettingSearchEntry(Icons.Outlined.PlayCircle, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_player), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_player_subtitle), secContentPlayback, onNavigateToPlayerSettings),
+        SettingSearchEntry(Icons.Outlined.AutoFixHigh, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.player_settings_sponsorblock), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_sponsorblock_subtitle), secContentPlayback, onNavigateToSponsorBlock),
         SettingSearchEntry(Icons.Outlined.HighQuality, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_quality), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_quality_subtitle), secContentPlayback, onNavigateToVideoQuality),
         SettingSearchEntry(Icons.Outlined.Slideshow, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_quality_settings_title), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_quality_settings_subtitle), secContentPlayback, onNavigateToShortsQuality),
         SettingSearchEntry(Icons.Outlined.Speed, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_buffer), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_buffer_subtitle), secContentPlayback, onNavigateToBufferSettings),
@@ -545,6 +547,13 @@ fun SettingsScreen(
                          title = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_player),
                          subtitle = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_player_subtitle),
                          onClick = onNavigateToPlayerSettings
+                    )
+                    HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    SettingsItem(
+                        icon = Icons.Outlined.AutoFixHigh,
+                        title = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.player_settings_sponsorblock),
+                        subtitle = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_sponsorblock_subtitle),
+                        onClick = onNavigateToSponsorBlock
                     )
                     HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     SettingsItem(

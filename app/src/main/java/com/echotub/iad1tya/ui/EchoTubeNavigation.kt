@@ -268,6 +268,7 @@ fun NavGraphBuilder.flowAppGraph(
             onNavigateToTimeManagement = { navController.navigate("settings/time_management") },
             onNavigateToImport = { navController.navigate("settings/import") },
             onNavigateToPlayerSettings = { navController.navigate("settings/player") },
+            onNavigateToSponsorBlock = { navController.navigate("settings/sponsorblock") },
             onNavigateToVideoQuality = { navController.navigate("settings/video_quality") },
             onNavigateToShortsQuality = { navController.navigate("settings/shorts_quality") },
             onNavigateToContentSettings = { navController.navigate("settings/content") },
@@ -292,6 +293,14 @@ fun NavGraphBuilder.flowAppGraph(
         currentRoute.value = "settings/player"
         showBottomNav.value = false
         com.echotube.iad1tya.ui.screens.settings.PlayerSettingsScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable("settings/sponsorblock") {
+        currentRoute.value = "settings/sponsorblock"
+        showBottomNav.value = false
+        com.echotube.iad1tya.ui.screens.settings.SponsorBlockSettingsScreen(
             onNavigateBack = { navController.popBackStack() }
         )
     }
