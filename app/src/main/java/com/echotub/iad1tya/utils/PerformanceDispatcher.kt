@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2026 EchoTube | A-EDev
+ * Copyright (C) 2025-2026 A-EDev
+ * Copyright (C) 2025-2026 iad1tya - EchoTube modifications
  *
  * This file is part of EchoTube (https://github.com/iad1tya/EchoTube).
  *

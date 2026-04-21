@@ -10,6 +10,10 @@
   </a>
 </div>
 
+## Fork Attribution
+EchoTube is a fork of [Flow](https://github.com/A-EDev/Flow) by [A-EDev](https://github.com/A-EDev), licensed under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
+Original project: https://github.com/A-EDev/Flow
+
 ---
 
 ## Overview
@@ -167,10 +171,6 @@ If EchoTube has been useful to you, consider supporting its development.
 - [Firebase Setup](FIREBASE_SETUP.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Build and Release Guide](docs/BUILD_AND_RELEASE.md)
-
----
-
-Thanks to the Flow project (https://github.com/A-EDev/Flow) for the inspiration. It played an important role in helping shape and complete this project.
 
 ---
 
