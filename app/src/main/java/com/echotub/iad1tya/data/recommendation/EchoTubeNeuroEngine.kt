@@ -1,17 +1,14 @@
 /*
- * Copyright (C) 2025-2026 A-EDev
- * Copyright (C) 2025-2026 iad1tya - EchoTube modifications
- *
- * This file is part of EchoTube (https://github.com/iad1tya/EchoTube).
- *
- * EchoTube is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3 of the License.
- *
- * This recommendation algorithm (FlowNeuroEngine) is the intellectual property
- * of the EchoTube project. Any use of this code in other projects must
- * explicitly credit "EchoTube Android Client" and link back to the original repository.
- */
+Copyright (C) 2025-2026 Flow | A-EDev
+Copyright (C) 2025-2026 iad1tya - EchoTube modifications
+This file is part of EchoTube, a fork of Flow (https://github.com/A-EDev/Flow).
+EchoTube is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License.
+This recommendation algorithm (FlowNeuroEngine) is the intellectual property
+of the Flow project. Any use of this code in other projects must
+explicitly credit "Flow Android Client" and link back to the original repository.
+*/
 
 package com.echotube.iad1tya.data.recommendation
 
