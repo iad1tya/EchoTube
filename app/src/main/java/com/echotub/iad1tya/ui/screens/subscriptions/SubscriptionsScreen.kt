@@ -125,12 +125,29 @@ fun SubscriptionsScreen(
     Scaffold(
         topBar = {
             if (isManagingSubs) {
-                TopAppBar(
-                    title = {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { isManagingSubs = false; searchQuery = "" }) {
+                            Icon(Icons.Default.ArrowBack, stringResource(R.string.close))
+                        }
+
                         TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text(androidx.compose.ui.res.stringResource(R.string.subscriptions_search_placeholder), style = MaterialTheme.typography.bodyLarge) },
+                            placeholder = {
+                                Text(
+                                    androidx.compose.ui.res.stringResource(R.string.subscriptions_search_placeholder),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
@@ -138,24 +155,14 @@ fun SubscriptionsScreen(
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.weight(1f)
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { isManagingSubs = false; searchQuery = "" }) {
-                            Icon(Icons.Default.ArrowBack, stringResource(R.string.close))
-                        }
-                    },
-                    actions = {
+
                         IconButton(onClick = { launcher.launch("application/json") }) {
                             Icon(Icons.Default.Upload, stringResource(R.string.import_newpipe_backup))
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
+                    }
+                }
             } else {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -218,7 +225,7 @@ fun SubscriptionsScreen(
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         item {
