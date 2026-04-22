@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -98,6 +99,28 @@ fun SubscriptionsScreen(
     
     val subscribedChannels = uiState.subscribedChannels
     val videos = uiState.recentVideos
+
+    var lastLoadTriggerIndex by remember { mutableIntStateOf(-1) }
+
+    LaunchedEffect(feedGridState, isManagingSubs, uiState.hasMoreVideos, uiState.isLoadingMore) {
+        if (isManagingSubs) return@LaunchedEffect
+
+        snapshotFlow {
+            val layoutInfo = feedGridState.layoutInfo
+            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val totalItems = layoutInfo.totalItemsCount
+            lastVisibleIndex to totalItems
+        }.collectLatest { (lastVisibleIndex, totalItems) ->
+            val nearEnd = totalItems > 0 && lastVisibleIndex >= totalItems - 6
+            if (nearEnd && uiState.hasMoreVideos && !uiState.isLoadingMore && lastVisibleIndex > lastLoadTriggerIndex) {
+                lastLoadTriggerIndex = lastVisibleIndex
+                viewModel.loadMoreVideos()
+            }
+            if (!uiState.hasMoreVideos) {
+                lastLoadTriggerIndex = -1
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -325,6 +348,19 @@ fun SubscriptionsScreen(
                                             video = video,
                                             onClick = { onVideoClick(video) }
                                         )
+                                    }
+                                }
+
+                                if (uiState.isLoadingMore) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
                                     }
                                 }
                                 

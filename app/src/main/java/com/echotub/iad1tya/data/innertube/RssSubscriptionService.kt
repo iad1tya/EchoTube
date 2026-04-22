@@ -10,6 +10,7 @@ import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
 import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
 import org.schabi.newpipe.extractor.feed.FeedInfo
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,7 +22,11 @@ object RssSubscriptionService {
     private const val CHANNEL_CHUNK_SIZE = 8
     private const val CHANNEL_BATCH_SIZE = 50
     private val CHANNEL_BATCH_DELAY = (100L..400L)
-    private const val MAX_FEED_AGE_DAYS = 90L
+    // Keep the historical window effectively unbounded so scrolling can surface much older uploads.
+    private const val MAX_FEED_AGE_DAYS = 36500L
+    // Pull deeper tab pagination per channel so "load more" has enough backlog.
+    private const val MAX_TAB_PAGES_PER_CHANNEL = 30
+    private const val TAB_PAGE_DELAY_MS = 120L
 
     private const val MAX_REGULAR_VIDEOS = 150
     private const val MAX_SHORTS = 60
@@ -97,18 +102,18 @@ object RssSubscriptionService {
             chunkVideos.forEach { if (it.isShort) allShorts.add(it) else allRegular.add(it) }
             Log.d(TAG, "Chunk ${chunkIndex + 1} done: +${chunkVideos.size} (regular=${allRegular.size}, shorts=${allShorts.size})")
 
-            emit(buildFeed(allRegular, allShorts))
+            emit(buildFeed(allRegular, allShorts, maxTotal))
         }
 
-        emit(buildFeed(allRegular, allShorts))
+        emit(buildFeed(allRegular, allShorts, maxTotal))
         Log.i(TAG, "======== FEED FETCH COMPLETE: regular=${allRegular.size.coerceAtMost(MAX_REGULAR_VIDEOS)} shorts=${allShorts.size.coerceAtMost(MAX_SHORTS)} from ${channelIds.size} channels ========")
     }
 
-    /** Merge regular and shorts lists with independent caps, sorted by date. */
-    private fun buildFeed(regular: List<Video>, shorts: List<Video>): List<Video> {
-        val r = regular.sortedByDescending { it.timestamp }.take(MAX_REGULAR_VIDEOS)
-        val s = shorts.sortedByDescending { it.timestamp }.take(MAX_SHORTS)
-        return (r + s).sortedByDescending { it.timestamp }
+    /** Merge regular and shorts lists, sorted by date, then apply the overall feed cap. */
+    private fun buildFeed(regular: List<Video>, shorts: List<Video>, maxTotal: Int): List<Video> {
+        return (regular + shorts)
+            .sortedByDescending { it.timestamp }
+            .take(maxTotal)
     }
 
 
@@ -189,18 +194,12 @@ object RssSubscriptionService {
             val (videoItems, shortsItems) = coroutineScope {
                 val videoDeferred = videosTab?.let {
                     async(Dispatchers.IO) {
-                        runCatching {
-                            ChannelTabInfo.getInfo(service, it)
-                                .relatedItems.filterIsInstance<StreamInfoItem>().take(15)
-                        }.getOrElse { emptyList() }
+                        loadAllTabItems(service, it)
                     }
                 }
                 val shortsDeferred = shortsTab?.let {
                     async(Dispatchers.IO) {
-                        runCatching {
-                            ChannelTabInfo.getInfo(service, it)
-                                .relatedItems.filterIsInstance<StreamInfoItem>().take(10)
-                        }.getOrElse { emptyList() }
+                        loadAllTabItems(service, it)
                     }
                 }
                 (videoDeferred?.await() ?: emptyList<StreamInfoItem>()) to
@@ -238,6 +237,35 @@ object RssSubscriptionService {
             Log.e(TAG, "[$channelId] ChannelInfo FAILED (${e::class.simpleName}): ${e.message}")
             return emptyList()
         }
+    }
+
+    /**
+     * Loads multiple pages from a channel tab (Videos/Shorts) to avoid truncating
+     * subscription feeds to only the first page.
+     */
+    private suspend fun loadAllTabItems(
+        service: org.schabi.newpipe.extractor.StreamingService,
+        tab: ListLinkHandler
+    ): List<StreamInfoItem> {
+        return runCatching {
+            val out = mutableListOf<StreamInfoItem>()
+
+            val initial = ChannelTabInfo.getInfo(service, tab)
+            out += initial.relatedItems.filterIsInstance<StreamInfoItem>()
+
+            var nextPage = initial.nextPage
+            var pagesLoaded = 1
+
+            while (nextPage != null && pagesLoaded < MAX_TAB_PAGES_PER_CHANNEL) {
+                delay(TAB_PAGE_DELAY_MS)
+                val more = ChannelTabInfo.getMoreItems(service, tab, nextPage)
+                out += more.items.filterIsInstance<StreamInfoItem>()
+                nextPage = more.nextPage
+                pagesLoaded++
+            }
+
+            out
+        }.getOrElse { emptyList() }
     }
 
     /**

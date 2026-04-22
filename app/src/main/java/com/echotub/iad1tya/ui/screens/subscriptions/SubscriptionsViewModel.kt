@@ -27,6 +27,9 @@ class SubscriptionsViewModel : ViewModel() {
          * 4 hours — balances freshness with avoiding an RSS fetch on every screen visit.
          */
         private const val FEED_CACHE_TTL_MS = 4 * 60 * 60 * 1000L // 4 hours
+        private const val MAX_SUBS_FEED_ITEMS = 5000
+        private const val INITIAL_VISIBLE_REGULAR_VIDEOS = 40
+        private const val LOAD_MORE_STEP = 30
     }
 
     private lateinit var subscriptionRepository: SubscriptionRepository
@@ -39,6 +42,8 @@ class SubscriptionsViewModel : ViewModel() {
     private lateinit var cacheDao: com.echotube.iad1tya.data.local.dao.CacheDao
     private lateinit var watchHistoryDao: com.echotube.iad1tya.data.local.dao.WatchHistoryDao
     private lateinit var playerPreferences: PlayerPreferences
+    private var allRegularVideos: List<Video> = emptyList()
+    private var allShorts: List<Video> = emptyList()
     
     fun initialize(context: Context) {
         subscriptionRepository = SubscriptionRepository.getInstance(context)
@@ -130,7 +135,8 @@ class SubscriptionsViewModel : ViewModel() {
                             Log.i(TAG, "Starting network fetch for ${channels.size} channels (cacheAge=${cacheAgeMs / 60_000}min, rows=$cacheCount)")
 
                             com.echotube.iad1tya.data.innertube.RssSubscriptionService.fetchSubscriptionVideos(
-                                channelIds = channels.map { it.id }
+                                channelIds = channels.map { it.id },
+                                maxTotal = MAX_SUBS_FEED_ITEMS
                             ).collect { videos ->
                                 Log.i(TAG, "Network emit received: ${videos.size} videos (shorts=${videos.count { it.isShort }}, regular=${videos.count { !it.isShort }})")
                                 if (videos.isNotEmpty()) {
@@ -214,7 +220,41 @@ class SubscriptionsViewModel : ViewModel() {
             regular
         }
 
-        _uiState.update { it.copy(recentVideos = filteredRegular, shorts = unwatchedShorts) }
+        allRegularVideos = filteredRegular
+        allShorts = unwatchedShorts
+
+        val currentVisible = _uiState.value.visibleVideoCount
+            .coerceAtLeast(INITIAL_VISIBLE_REGULAR_VIDEOS)
+            .coerceAtMost(allRegularVideos.size)
+
+        _uiState.update {
+            it.copy(
+                recentVideos = allRegularVideos.take(currentVisible),
+                shorts = allShorts,
+                visibleVideoCount = currentVisible,
+                hasMoreVideos = currentVisible < allRegularVideos.size,
+                isLoadingMore = false
+            )
+        }
+    }
+
+    fun loadMoreVideos() {
+        val state = _uiState.value
+        if (state.isLoadingMore || !state.hasMoreVideos) return
+
+        _uiState.update { it.copy(isLoadingMore = true) }
+
+        val newVisibleCount = (state.visibleVideoCount + LOAD_MORE_STEP)
+            .coerceAtMost(allRegularVideos.size)
+
+        _uiState.update {
+            it.copy(
+                recentVideos = allRegularVideos.take(newVisibleCount),
+                visibleVideoCount = newVisibleCount,
+                hasMoreVideos = newVisibleCount < allRegularVideos.size,
+                isLoadingMore = false
+            )
+        }
     }
     
     private fun parseRelativeTime(dateString: String): Long {
@@ -309,7 +349,7 @@ class SubscriptionsViewModel : ViewModel() {
             supervisorScope {
                 com.echotube.iad1tya.data.innertube.RssSubscriptionService.fetchSubscriptionVideos(
                     channelIds = channels.map { it.id },
-                    maxTotal = 200
+                    maxTotal = MAX_SUBS_FEED_ITEMS
                 ).collect { videos ->
                     if (videos.isNotEmpty()) {
                         updateVideos(videos)
@@ -399,6 +439,9 @@ data class SubscriptionsUiState(
     val subscribedChannels: List<Channel> = emptyList(),
     val recentVideos: List<Video> = emptyList(),
     val shorts: List<Video> = emptyList(),
+    val visibleVideoCount: Int = 40,
+    val hasMoreVideos: Boolean = false,
+    val isLoadingMore: Boolean = false,
     val selectedChannelId: String? = null,
     val isLoading: Boolean = false,
     val isFullWidthView: Boolean = false,
