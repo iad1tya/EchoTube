@@ -216,53 +216,40 @@ class ShortsViewModel @Inject constructor(
      * Load more shorts using continuation token.
      */
     fun loadMoreShorts() {
-        if (isLoadingMore || !_uiState.value.hasMorePages) return
-        
+        if (isLoadingMore) return   // already in flight — don't stack calls
+        // hasMorePages guard removed: repository handles fallback/forceRefresh internally
+
         isLoadingMore = true
         _uiState.value = _uiState.value.copy(isLoadingMore = true)
-        
+
         viewModelScope.launch(PerformanceDispatcher.networkIO) {
             try {
-                val result = withTimeoutOrNull(15_000L) {
+                val result = withTimeoutOrNull(20_000L) {
                     shortsRepository.loadMore(_uiState.value.continuation)
                 }
-                
+
                 if (result != null && result.shorts.isNotEmpty()) {
                     val currentShorts = _uiState.value.shorts
                     val updatedShorts = (currentShorts + result.shorts).distinctBy { it.id }
-                    
                     _uiState.value = _uiState.value.copy(
                         shorts = updatedShorts,
                         continuation = result.continuation,
                         isLoadingMore = false,
-                        hasMorePages = result.continuation != null || result.shorts.isNotEmpty()
+                        hasMorePages = true   // always true — repo has infinite fallback
                     )
                 } else {
-                    val fresh = withTimeoutOrNull(12_000L) {
-                        shortsRepository.forceRefresh()
-                    }
-
-                    if (fresh != null && fresh.shorts.isNotEmpty()) {
-                        val currentShorts = _uiState.value.shorts
-                        val updatedShorts = (currentShorts + fresh.shorts).distinctBy { it.id }
-                        _uiState.value = _uiState.value.copy(
-                            shorts = updatedShorts,
-                            continuation = fresh.continuation,
-                            isLoadingMore = false,
-                            hasMorePages = fresh.continuation != null || fresh.shorts.isNotEmpty()
-                        )
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            isLoadingMore = false,
-                            hasMorePages = false
-                        )
-                    }
+                    // Repo returned nothing (network issue etc.) — keep hasMorePages=true
+                    // so the user can retry by scrolling further
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingMore = false,
+                        hasMorePages = true
+                    )
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading more shorts", e)
                 _uiState.value = _uiState.value.copy(
                     isLoadingMore = false,
-                    error = e.message ?: "Failed to load more shorts"
+                    hasMorePages = true   // keep retryable on error
                 )
             } finally {
                 isLoadingMore = false
@@ -293,8 +280,8 @@ class ShortsViewModel @Inject constructor(
     // PAGE TRACKING & PRE-LOADING 
     fun updateCurrentIndex(index: Int) {
         _uiState.value = _uiState.value.copy(currentIndex = index)
-        
-        if (index >= _uiState.value.shorts.size - 5) {
+        // Trigger load when within 8 of the end for earlier pre-loading
+        if (index >= _uiState.value.shorts.size - 8) {
             loadMoreShorts()
         }
     }

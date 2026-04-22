@@ -158,7 +158,7 @@ fun ShortsScreen(
 
                 // Load more when near end
                 LaunchedEffect(pagerState.currentPage) {
-                    if (pagerState.currentPage >= uiState.shorts.size - 3) {
+                    if (pagerState.currentPage >= uiState.shorts.size - 5) {
                         viewModel.loadMoreShorts()
                     }
                 }

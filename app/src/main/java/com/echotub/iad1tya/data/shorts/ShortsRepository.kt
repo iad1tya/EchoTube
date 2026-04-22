@@ -85,7 +85,7 @@ class ShortsRepository private constructor(private val context: Context) {
         private const val NEWPIPE_TIMEOUT_MS = 8_000L
         private const val STREAM_RESOLVE_TIMEOUT_MS = 8_000L
         private const val ENRICHMENT_TIMEOUT_MS = 12_000L
-        private const val MAX_RECENTLY_SHOWN = 100
+        private const val MAX_RECENTLY_SHOWN = 500
         private const val MIN_POOL_SIZE = 10
         
         @Volatile
@@ -265,22 +265,22 @@ class ShortsRepository private constructor(private val context: Context) {
         continuation: String?
     ): ShortsSequenceResult = withContext(Dispatchers.IO) {
         if (continuation == null) {
-            Log.d(TAG, "No continuation token — cannot load more")
-            return@withContext ShortsSequenceResult(emptyList(), null)
+            Log.d(TAG, "No continuation token — falling back to discovery refresh")
+            return@withContext forceRefresh()
         }
         
         Log.d(TAG, "━━━ Loading More Shorts (continuation) ━━━")
 
         val userSubs = subscriptionRepository.getAllSubscriptionIds()
 
-        // InnerTube continuation
+        // InnerTube continuation — do NOT filter by recentlyShownIds here;
+        // the continuation token already provides the next unique page from YouTube.
         val result = try {
             withTimeoutOrNull(INNERTUBE_TIMEOUT_MS) {
                 val page = YouTube.shorts(sequenceParams = continuation).getOrNull()
                 if (page != null && page.items.isNotEmpty()) {
-                    val shorts = page.items
-                        .map { it.toShortVideo() }
-                        .filter { it.id !in recentlyShownIds }
+                    // Filter only IDs already visible in this session (dedup, not recently-shown)
+                    val shorts = page.items.map { it.toShortVideo() }
                     ShortsSequenceResult(shorts, page.continuation)
                 } else null
             }
@@ -290,28 +290,17 @@ class ShortsRepository private constructor(private val context: Context) {
         }
         
         if (result != null && result.shorts.isNotEmpty()) {
-            Log.d(TAG, "✓ Loaded ${result.shorts.size} more shorts (pre-enrichment)")
+            Log.d(TAG, "✓ Loaded ${result.shorts.size} more shorts via continuation")
 
-            val recentlySeen = try {
-                EchoTubeNeuroEngine.getRecentlySeenShorts()
-            } catch (e: Exception) { emptySet() }
-
-            val freshShorts = result.shorts.filter { it.id !in recentlySeen }
-
-            if (freshShorts.size < 3 && result.shorts.size > 3) {
-                Log.i(TAG, "loadMore: ${result.shorts.size - freshShorts.size} seen Shorts filtered, triggering discovery refresh")
-                return@withContext forceRefresh()
-            }
-
-            // Enrich metadata OUTSIDE the InnerTube timeout
+            // Enrich metadata outside the InnerTube timeout
             val metadataEnriched = try {
                 withTimeoutOrNull(ENRICHMENT_TIMEOUT_MS) {
-                    enrichMissingMetadata(freshShorts)
+                    enrichMissingMetadata(result.shorts)
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Enrichment for continuation failed: ${e.message}")
                 null
-            } ?: freshShorts
+            } ?: result.shorts
 
             val enriched = try {
                 withTimeoutOrNull(ENRICHMENT_TIMEOUT_MS) {
@@ -336,13 +325,13 @@ class ShortsRepository private constructor(private val context: Context) {
             return@withContext enrichedResult
         }
 
-        // Fallback: fresh NewPipe fetch
-        Log.d(TAG, "⟳ Continuation failed, fetching fresh from NewPipe")
+        // Continuation returned nothing — fall back to a fresh discovery fetch
+        Log.d(TAG, "⟳ Continuation empty, fetching fresh from NewPipe")
         try {
             val fallback = withTimeoutOrNull(NEWPIPE_TIMEOUT_MS) {
                 fetchFromNewPipe()
             }
-            if (fallback != null) {
+            if (fallback != null && fallback.shorts.isNotEmpty()) {
                 val reRanked = reRankWithEchoTubeNeuro(fallback.shorts, userSubs)
                 val rankedFallback = fallback.copy(shorts = reRanked)
                 rankedFallback.shorts.forEach { shortsCache.put(it.id, it) }
