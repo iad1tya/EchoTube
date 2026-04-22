@@ -58,6 +58,7 @@ fun SubscriptionsScreen(
     onVideoClick: (Video) -> Unit,
     onShortClick: (String) -> Unit = {},
     onChannelClick: (String) -> Unit = {},
+    onViewAllShortsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SubscriptionsViewModel = viewModel()
 ) {
@@ -333,10 +334,10 @@ fun SubscriptionsScreen(
                                 if (uiState.isShortsShelfEnabled && uiState.shorts.isNotEmpty()) {
                                     item(span = { GridItemSpan(maxLineSpan) }) {
                                         Column {
-                                            
                                             ShortsShelf(
                                                 shorts = uiState.shorts,
-                                                onShortClick = { short -> onShortClick(short.id) }
+                                                onShortClick = { short -> onShortClick(short.id) },
+                                                onViewAllClick = onViewAllShortsClick
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
                                             HorizontalDivider(thickness = 4.dp, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))

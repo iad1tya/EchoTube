@@ -39,6 +39,9 @@ import com.echotube.iad1tya.ui.screens.settings.ImportDataScreen
 import com.echotube.iad1tya.ui.screens.personality.EchoTubePersonalityScreen
 import com.echotube.iad1tya.ui.screens.shorts.ShortsScreen
 import com.echotube.iad1tya.ui.screens.subscriptions.SubscriptionsScreen
+import com.echotube.iad1tya.ui.screens.subscriptions.SubscriptionShortsScreen
+import com.echotube.iad1tya.ui.screens.subscriptions.SubscriptionsViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.echotube.iad1tya.ui.screens.channel.ChannelScreen
 import com.echotube.iad1tya.ui.screens.onboarding.OnboardingScreen
 import com.echotube.iad1tya.ui.theme.ThemeMode
@@ -177,7 +180,28 @@ fun NavGraphBuilder.flowAppGraph(
             onChannelClick = { channelUrl ->
                 val encodedUrl = channelUrl.replace("/", "%2F").replace(":", "%3A")
                 navController.navigate("channel?url=$encodedUrl")
+            },
+            onViewAllShortsClick = {
+                navController.navigate("subscription_shorts")
             }
+        )
+    }
+
+    composable("subscription_shorts") {
+        currentRoute.value = "subscription_shorts"
+        showBottomNav.value = false
+        // Share the exact same ViewModel instance that SubscriptionsScreen already loaded —
+        // using the 'subscriptions' back stack entry as the owner so data is not re-fetched.
+        val subsEntry = remember(navController) {
+            navController.getBackStackEntry("subscriptions")
+        }
+        val subsViewModel: SubscriptionsViewModel = viewModel(subsEntry)
+        SubscriptionShortsScreen(
+            onBackClick = { navController.popBackStack() },
+            onShortClick = { videoId ->
+                navController.navigate("shorts?startVideoId=$videoId")
+            },
+            viewModel = subsViewModel
         )
     }
 

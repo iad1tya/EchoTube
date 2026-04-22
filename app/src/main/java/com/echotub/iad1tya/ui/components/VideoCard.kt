@@ -23,6 +23,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.collectAsState
@@ -886,12 +887,15 @@ private fun formatContinueWatchingTime(ms: Long): String {
 @Composable
 fun ShortsShelf(
     shorts: List<Video>,
-    onShortClick: (Video) -> Unit
+    onShortClick: (Video) -> Unit,
+    onViewAllClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -906,13 +910,34 @@ fun ShortsShelf(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+            Spacer(modifier = Modifier.width(8.dp))
+            // Count badge
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "${shorts.size}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            // View all button
+            if (onViewAllClick != null) {
+                TextButton(onClick = onViewAllClick) {
+                    Text("View all", fontWeight = FontWeight.Bold)
+                }
+            }
         }
-        
+
         LazyRow(
             contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(shorts) { short ->
+            items(shorts, key = { it.id }) { short ->
                 ShortsCard(video = short, onClick = { onShortClick(short) })
             }
         }
