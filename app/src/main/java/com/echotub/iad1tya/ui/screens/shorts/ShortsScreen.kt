@@ -351,6 +351,37 @@ fun ShortsScreen(
                     }
                 }
 
+                // ── Casting auto-advance ─────────────────────────────────────────────
+                // When a DLNA device finishes the current short, resolve the next short's
+                // stream and cast it automatically — then advance the pager to match.
+                LaunchedEffect(pagerState.settledPage, uiState.shorts) {
+                    com.echotube.iad1tya.player.dlna.DlnaCastManager.castTrackEnded.collect { endedAt ->
+                        if (endedAt == 0L) return@collect          // initial value, ignore
+                        if (!com.echotube.iad1tya.player.dlna.DlnaCastManager.isCasting) return@collect
+
+                        val nextPage = pagerState.settledPage + 1
+                        val nextShort = uiState.shorts.getOrNull(nextPage) ?: return@collect
+
+                        try {
+                            // Resolve stream for the next short
+                            val streamInfo = viewModel.getVideoStreamInfo(nextShort.id) ?: return@collect
+                            val allVideo = (streamInfo.videoStreams.orEmpty() + streamInfo.videoOnlyStreams.orEmpty())
+                            val videoStream = allVideo.filter { it.height <= shortsTargetHeight }
+                                .maxByOrNull { it.height }
+                                ?: allVideo.maxByOrNull { it.height }
+                            val vUrl = videoStream?.content ?: videoStream?.url ?: return@collect
+
+                            Log.d("ShortsScreen", "Casting auto-advance → ${nextShort.id}")
+                            // Cast the next short to the already-connected device
+                            com.echotube.iad1tya.player.dlna.DlnaCastManager.castNextTo(vUrl, nextShort.title)
+                            // Advance the pager UI to match
+                            pagerState.animateScrollToPage(nextPage)
+                        } catch (e: Exception) {
+                            Log.e("ShortsScreen", "Cast auto-advance failed: ${e.message}")
+                        }
+                    }
+                }
+
                 LaunchedEffect(shortsTargetHeight) {
                     val newHeight = shortsTargetHeight
                     if (newHeight == prevShortsTargetHeight.value) return@LaunchedEffect

@@ -76,6 +76,14 @@ object DlnaCastManager {
     private val _castDuration = MutableStateFlow(0L)
     val castDuration: StateFlow<Long> = _castDuration.asStateFlow()
 
+    /**
+     * Incremented each time the DLNA renderer finishes playing the current track.
+     * ShortsScreen collects this to advance the VerticalPager to the next short.
+     * Value is a monotonic timestamp so distinctUntilChanged() doesn't suppress repeated events.
+     */
+    private val _castTrackEnded = MutableStateFlow(0L)
+    val castTrackEnded: StateFlow<Long> = _castTrackEnded.asStateFlow()
+
     private var positionPollingJob: Job? = null
 
     // ── Discovery ──────────────────────────────────────────────────────────────
@@ -282,12 +290,27 @@ object DlnaCastManager {
                 delay(500)
                 play(device)
                 _currentDevice.value = device
+                // Reset position/duration for new track
+                _castPosition.value = 0L
+                _castDuration.value = 0L
                 startPositionPolling(device)
             } catch (e: Exception) {
                 Log.e(TAG, "castTo failed: ${e.message}")
                 _currentDevice.value = null
             }
         }
+    }
+
+    /**
+     * Cast a new URL to the already-connected device (used for Shorts auto-advance).
+     * Reuses the existing session — no re-discovery needed.
+     */
+    fun castNextTo(
+        videoUrl: String,
+        title: String
+    ) {
+        val device = _currentDevice.value ?: return
+        castTo(device, videoUrl, title)
     }
 
     fun stop() {
@@ -369,6 +392,7 @@ object DlnaCastManager {
     
     private fun startPositionPolling(device: DlnaDevice) {
         positionPollingJob?.cancel()
+        var trackEndedFired = false
         positionPollingJob = scope.launch {
             while (_currentDevice.value != null) {
                 try {
@@ -383,11 +407,50 @@ object DlnaCastManager {
                         body
                     )
                     parsePositionInfo(response)
+
+                    // ── End-of-track detection ──────────────────────────────
+                    val pos = _castPosition.value
+                    val dur = _castDuration.value
+                    val nearEnd = dur > 2L && pos >= dur - 2L
+
+                    // Also check TransportState for STOPPED / NO_MEDIA_PRESENT
+                    val transportState = getTransportState(device)
+                    val stateEnded = transportState == "STOPPED" || transportState == "NO_MEDIA_PRESENT"
+
+                    if (!trackEndedFired && (nearEnd || (stateEnded && pos > 0L))) {
+                        trackEndedFired = true
+                        Log.d(TAG, "Cast track ended: pos=${pos}s dur=${dur}s state=$transportState")
+                        _castTrackEnded.value = System.currentTimeMillis()
+                    }
+                    // Reset flag once player is clearly in a new track
+                    if (trackEndedFired && pos < dur / 2 && pos > 0L) {
+                        trackEndedFired = false
+                    }
                 } catch (e: Exception) {
                     Log.d(TAG, "Position poll error: ${e.message}")
                 }
                 delay(1000)
             }
+        }
+    }
+
+    /** Query GetTransportInfo to get the current playback state (PLAYING/STOPPED/etc). */
+    private fun getTransportState(device: DlnaDevice): String {
+        return try {
+            val body = soapAction(
+                "GetTransportInfo",
+                "urn:schemas-upnp-org:service:AVTransport:1",
+                "<InstanceID>0</InstanceID>"
+            )
+            val response = sendSoapWithResponse(
+                device.avTransportUrl,
+                "urn:schemas-upnp-org:service:AVTransport:1#GetTransportInfo",
+                body
+            )
+            Regex("<CurrentTransportState>([^<]+)</CurrentTransportState>")
+                .find(response)?.groupValues?.get(1) ?: ""
+        } catch (e: Exception) {
+            ""
         }
     }
 
