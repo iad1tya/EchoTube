@@ -292,7 +292,7 @@ fun SettingsScreen(
         SettingSearchEntry(Icons.Outlined.AutoFixHigh, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.player_settings_sponsorblock), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_sponsorblock_subtitle), secContentPlayback, onNavigateToSponsorBlock),
         SettingSearchEntry(Icons.Outlined.HighQuality, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_quality), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_quality_subtitle), secContentPlayback, onNavigateToVideoQuality),
         SettingSearchEntry(Icons.Outlined.Slideshow, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_quality_settings_title), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_quality_settings_subtitle), secContentPlayback, onNavigateToShortsQuality),
-        SettingSearchEntry(Icons.Outlined.Schedule, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_auto_scroll_settings_title), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_auto_scroll_settings_subtitle), secContentPlayback, onNavigateToShortsAutoScroll),
+        SettingSearchEntry(androidx.compose.ui.res.painterResource(com.echotube.iad1tya.R.drawable.ic_scroll), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_auto_scroll_settings_title), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_auto_scroll_settings_subtitle), secContentPlayback, onNavigateToShortsAutoScroll),
         SettingSearchEntry(Icons.Outlined.Speed, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_buffer), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_buffer_subtitle), secContentPlayback, onNavigateToBufferSettings),
         SettingSearchEntry(Icons.Outlined.Download, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_downloads), androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_downloads_subtitle), secContentPlayback, onNavigateToDownloads),
         SettingSearchEntry(Icons.Outlined.TrendingUp, androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.settings_item_region), REGION_NAMES[currentRegion] ?: currentRegion, secContentPlayback) { showRegionDialog = true },
@@ -574,7 +574,7 @@ fun SettingsScreen(
                     )
                     HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     SettingsItem(
-                        icon = Icons.Outlined.Schedule,
+                        icon = painterResource(com.echotube.iad1tya.R.drawable.ic_scroll),
                         title = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_auto_scroll_settings_title),
                         subtitle = androidx.compose.ui.res.stringResource(com.echotube.iad1tya.R.string.shorts_auto_scroll_settings_subtitle),
                         onClick = onNavigateToShortsAutoScroll
@@ -969,7 +969,7 @@ private val REGION_NAMES = mapOf(
 
 
 private data class SettingSearchEntry(
-    val icon: ImageVector,
+    val icon: Any?,
     val title: String,
     val subtitle: String,
     val sectionLabel: String,

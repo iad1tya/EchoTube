@@ -117,6 +117,13 @@ fun DonationsScreen(
                                 subtitle = "github.com/sponsors/iad1tya",
                                 onClick = { openUrl(context, "https://github.com/sponsors/iad1tya") }
                             )
+                            AboutRowDividerLike()
+                            DonationModeRow(
+                                iconPainter = painterResource(id = R.drawable.ic_patreon),
+                                title = "Patreon",
+                                subtitle = "patreon.com/iad1tya",
+                                onClick = { openUrl(context, "https://www.patreon.com/cw/iad1tya") }
+                            )
                         }
                     }
                 }
