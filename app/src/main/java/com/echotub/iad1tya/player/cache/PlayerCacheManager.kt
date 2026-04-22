@@ -130,19 +130,23 @@ class PlayerCacheManager(private val context: Context) {
     }
     
     /**
-     * Release cache resources.
+     * Release local references to the shared cache and its data-source factories.
+     *
+     * NOTE: Do NOT call cache.release() here. The SimpleCache is owned by
+     * SharedPlayerCacheProvider and its lifecycle spans the whole app process.
+     * Releasing it here would corrupt every other component sharing the same instance.
      */
     fun release() {
         try {
-            cache?.release()
+            // Only null our local references — do NOT call cache?.release()
             cache = null
             sharedDataSourceFactory = null
             sharedDashDataSourceFactory = null
             sharedProgressiveDataSourceFactory = null
             sharedHlsDataSourceFactory = null
-            Log.d(TAG, "Cache resources released")
+            Log.d(TAG, "Cache references cleared (shared cache kept alive)")
         } catch (e: Exception) {
-            Log.w(TAG, "Error releasing cache", e)
+            Log.w(TAG, "Error clearing cache references", e)
         }
     }
     

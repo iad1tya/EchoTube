@@ -780,14 +780,15 @@ class EnhancedPlayerManager private constructor() {
         if (isAudioOnlyMode) return
         Log.d(TAG, "Switching to audio-only mode")
         isAudioOnlyMode = true
-        
+
         surfaceManager?.detachVideoSurface(null, player, appContext)
         // Set surface ready to false so it doesn't try to auto-reattach
         surfaceManager?.setSurfaceReady(false)
-        
-        // Reload as audio-only stream (bandwidth saving)
-        val pos = player?.currentPosition ?: 0L
-        loadMediaInternal(null, currentAudioStream, preservePosition = pos)
+
+        // Do NOT reload the stream here. ExoPlayer continues playing audio from the existing
+        // buffer once the video surface is detached. Reloading would flush the buffer and
+        // seek back ~3 seconds — the delay Roshan reported when backgrounding the app.
+        Log.d(TAG, "switchToAudioOnly: surface detached, audio continues without stream reload")
     }
     
     fun setSurfaceReady(ready: Boolean) {

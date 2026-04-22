@@ -26,9 +26,10 @@ object SharedPlayerCacheProvider {
 
     @Volatile private var cache: SimpleCache? = null
     @Volatile private var standaloneDb: DatabaseProvider? = null
+    @Volatile private var released: Boolean = false
 
     /**
-     * Returns the shared [SimpleCache], creating it on first call.
+     * Returns the shared [SimpleCache], creating it on first call or after an explicit release.
      *
      * All callers share the same instance regardless of which [databaseProvider] or
      * [maxCacheSizeBytes] they pass — only the first call's values are used.
@@ -39,20 +40,24 @@ object SharedPlayerCacheProvider {
         databaseProvider: DatabaseProvider? = null,
         maxCacheSizeBytes: Long = PlayerConfig.CACHE_SIZE_BYTES
     ): SimpleCache {
-        return cache ?: run {
-            val db = databaseProvider ?: run {
-                standaloneDb = StandaloneDatabaseProvider(context.applicationContext)
-                standaloneDb!!
-            }
-            val cacheDir = File(context.applicationContext.cacheDir, PlayerConfig.CACHE_DIR_NAME)
-            val evictor = if (maxCacheSizeBytes <= 0) {
-                NoOpCacheEvictor()
-            } else {
-                LeastRecentlyUsedCacheEvictor(maxCacheSizeBytes)
-            }
-            Log.d(TAG, "Creating shared SimpleCache: dir=$cacheDir, maxBytes=$maxCacheSizeBytes")
-            SimpleCache(cacheDir, evictor, db).also { cache = it }
+        // If cache exists and was NOT released, return it immediately
+        val existing = cache
+        if (existing != null && !released) return existing
+
+        // Either first call or the cache was explicitly released — create a fresh one
+        released = false
+        val db = databaseProvider ?: run {
+            standaloneDb = StandaloneDatabaseProvider(context.applicationContext)
+            standaloneDb!!
         }
+        val cacheDir = File(context.applicationContext.cacheDir, PlayerConfig.CACHE_DIR_NAME)
+        val evictor = if (maxCacheSizeBytes <= 0) {
+            NoOpCacheEvictor()
+        } else {
+            LeastRecentlyUsedCacheEvictor(maxCacheSizeBytes)
+        }
+        Log.d(TAG, "Creating shared SimpleCache: dir=$cacheDir, maxBytes=$maxCacheSizeBytes")
+        return SimpleCache(cacheDir, evictor, db).also { cache = it }
     }
 
     /** Release the cache (call only on full app shutdown / tests). */
@@ -61,6 +66,7 @@ object SharedPlayerCacheProvider {
         cache?.release()
         cache = null
         standaloneDb = null
+        released = true
         Log.d(TAG, "Shared SimpleCache released")
     }
 }
