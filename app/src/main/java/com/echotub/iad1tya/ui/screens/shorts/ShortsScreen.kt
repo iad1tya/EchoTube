@@ -287,8 +287,12 @@ fun ShortsScreen(
 
                     while (isActive && pagerState.settledPage == page) {
                         if (pagerState.isScrollInProgress && !autoScrollInProgress) {
-                            // Manual user scrolling always overrides pending auto-scroll.
-                            break
+                            // User is manually swiping — pause the timer and wait.
+                            // Do NOT break: let the while condition exit naturally when
+                            // settledPage changes, so the new page's LaunchedEffect starts
+                            // with isScrollInProgress=false and auto-scroll continues.
+                            kotlinx.coroutines.delay(100L)
+                            continue
                         }
 
                         val liveShort = uiState.shorts.getOrNull(page) ?: break
