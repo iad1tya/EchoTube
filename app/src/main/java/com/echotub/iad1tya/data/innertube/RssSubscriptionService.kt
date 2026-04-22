@@ -19,17 +19,14 @@ object RssSubscriptionService {
     private const val TAG = "InnertubeSubs"
     private const val YOUTUBE_URL = "https://www.youtube.com"
 
-    private const val CHANNEL_CHUNK_SIZE = 8
+    private const val CHANNEL_CHUNK_SIZE = 12           // more parallelism per chunk
     private const val CHANNEL_BATCH_SIZE = 50
-    private val CHANNEL_BATCH_DELAY = (100L..400L)
+    private val CHANNEL_BATCH_DELAY = (100L..300L)
     // Keep the historical window effectively unbounded so scrolling can surface much older uploads.
     private const val MAX_FEED_AGE_DAYS = 36500L
-    // Pull deeper tab pagination per channel so "load more" has enough backlog.
-    private const val MAX_TAB_PAGES_PER_CHANNEL = 30
-    private const val TAB_PAGE_DELAY_MS = 120L
-
-    private const val MAX_REGULAR_VIDEOS = 150
-    private const val MAX_SHORTS = 60
+    // Pull up to 5 pages per channel tab — enough backlog without blocking the whole feed.
+    private const val MAX_TAB_PAGES_PER_CHANNEL = 5
+    private const val TAB_PAGE_DELAY_MS = 80L
 
     fun fetchSubscriptionVideos(channelIds: List<String>, maxTotal: Int = 200): Flow<List<Video>> = flow {
         Log.i(TAG, "======== FEED FETCH START: ${channelIds.size} channels ========")
@@ -106,13 +103,17 @@ object RssSubscriptionService {
         }
 
         emit(buildFeed(allRegular, allShorts, maxTotal))
-        Log.i(TAG, "======== FEED FETCH COMPLETE: regular=${allRegular.size.coerceAtMost(MAX_REGULAR_VIDEOS)} shorts=${allShorts.size.coerceAtMost(MAX_SHORTS)} from ${channelIds.size} channels ========")
+        Log.i(TAG, "======== FEED FETCH COMPLETE: regular=${allRegular.size} shorts=${allShorts.size} from ${channelIds.size} channels ========")
     }
 
-    /** Merge regular and shorts lists, sorted by date, then apply the overall feed cap. */
+    /**
+     * Merge regular and shorts lists, sorted by date, then apply the overall feed cap.
+     * No per-type caps — maxTotal is the only limit so all videos from all channels surface.
+     */
     private fun buildFeed(regular: List<Video>, shorts: List<Video>, maxTotal: Int): List<Video> {
         return (regular + shorts)
             .sortedByDescending { it.timestamp }
+            .distinctBy { it.id }         // deduplicate (video may appear in both Videos + Shorts tabs)
             .take(maxTotal)
     }
 
@@ -150,13 +151,15 @@ object RssSubscriptionService {
             if (timestamps.isEmpty()) {
                 RssResult(hasRecent = true, videoTimestamps = emptyMap())
             } else {
+                // RSS returned items but none had parseable timestamps — treat as active
                 RssResult(
-                    hasRecent = newestTimestamp > minimumDateMillis,
+                    hasRecent = true,
                     videoTimestamps = timestamps
                 )
             }
         } catch (e: Exception) {
-            Log.w(TAG, "[$channelId] RSS FAILED: ${e::class.simpleName}: ${e.message}")
+            // RSS failed (network, parsing) — do NOT skip the channel, fall back to tab fetch
+            Log.w(TAG, "[$channelId] RSS FAILED (will still fetch tabs): ${e::class.simpleName}: ${e.message}")
             RssResult(hasRecent = true, videoTimestamps = emptyMap())
         }
     }

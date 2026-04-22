@@ -111,7 +111,7 @@ fun SubscriptionsScreen(
             val totalItems = layoutInfo.totalItemsCount
             lastVisibleIndex to totalItems
         }.collectLatest { (lastVisibleIndex, totalItems) ->
-            val nearEnd = totalItems > 0 && lastVisibleIndex >= totalItems - 6
+            val nearEnd = totalItems > 0 && lastVisibleIndex >= totalItems - 10
             if (nearEnd && uiState.hasMoreVideos && !uiState.isLoadingMore && lastVisibleIndex > lastLoadTriggerIndex) {
                 lastLoadTriggerIndex = lastVisibleIndex
                 viewModel.loadMoreVideos()

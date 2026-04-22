@@ -26,10 +26,10 @@ class SubscriptionsViewModel : ViewModel() {
          * How old the subscription-feed cache may be before a background refresh is triggered.
          * 4 hours — balances freshness with avoiding an RSS fetch on every screen visit.
          */
-        private const val FEED_CACHE_TTL_MS = 4 * 60 * 60 * 1000L // 4 hours
+        private const val FEED_CACHE_TTL_MS = 2 * 60 * 60 * 1000L // 2 hours
         private const val MAX_SUBS_FEED_ITEMS = 5000
-        private const val INITIAL_VISIBLE_REGULAR_VIDEOS = 40
-        private const val LOAD_MORE_STEP = 30
+        private const val INITIAL_VISIBLE_REGULAR_VIDEOS = 60
+        private const val LOAD_MORE_STEP = 40
     }
 
     private lateinit var subscriptionRepository: SubscriptionRepository
@@ -44,6 +44,8 @@ class SubscriptionsViewModel : ViewModel() {
     private lateinit var playerPreferences: PlayerPreferences
     private var allRegularVideos: List<Video> = emptyList()
     private var allShorts: List<Video> = emptyList()
+    /** Channel IDs that were used in the most recent successful network fetch. */
+    private var lastFetchedChannelIds: Set<String> = emptySet()
     
     fun initialize(context: Context) {
         subscriptionRepository = SubscriptionRepository.getInstance(context)
@@ -76,6 +78,12 @@ class SubscriptionsViewModel : ViewModel() {
         viewModelScope.launch(PerformanceDispatcher.diskIO) {
             cacheDao.getSubscriptionFeed().collect { cachedFeed ->
                 Log.d(TAG, "Cache observer: ${cachedFeed.size} entries in DB")
+                // Don't overwrite UI while a network fetch is actively running —
+                // the live network results are fresher and more complete.
+                if (_uiState.value.isLoading) {
+                    Log.d(TAG, "Cache observer: skipping update — network fetch in progress")
+                    return@collect
+                }
                 if (cachedFeed.isNotEmpty()) {
                     val videos = cachedFeed.map { entity ->
                          Video(
@@ -123,13 +131,16 @@ class SubscriptionsViewModel : ViewModel() {
                         }
 
                         // ── Cache-age gate ─────────────────────────────────────────────────
-                        val cacheCount   = cacheDao.getSubscriptionFeedCount()
+                        val cacheCount     = cacheDao.getSubscriptionFeedCount()
                         val latestCachedAt = cacheDao.getLatestCachedAt() ?: 0L
-                        val cacheAgeMs   = System.currentTimeMillis() - latestCachedAt
-                        val isCacheStale = cacheCount == 0 || cacheAgeMs > FEED_CACHE_TTL_MS
+                        val cacheAgeMs     = System.currentTimeMillis() - latestCachedAt
+                        val currentIds     = channels.map { it.id }.toSet()
+                        // Force re-fetch if: cache is empty, cache is stale, OR the channel list changed
+                        val channelSetChanged = currentIds != lastFetchedChannelIds
+                        val isCacheStale = cacheCount == 0 || cacheAgeMs > FEED_CACHE_TTL_MS || channelSetChanged
 
                         if (!isCacheStale) {
-                            Log.i(TAG, "Feed cache is fresh (age=${cacheAgeMs / 60_000}min, $cacheCount entries) — skipping network fetch")
+                            Log.i(TAG, "Feed cache is fresh and channels unchanged (age=${cacheAgeMs / 60_000}min, $cacheCount entries) — skipping network fetch")
                             _uiState.update { it.copy(isLoading = false) }
                         } else {
                             Log.i(TAG, "Starting network fetch for ${channels.size} channels (cacheAge=${cacheAgeMs / 60_000}min, rows=$cacheCount)")
@@ -140,6 +151,7 @@ class SubscriptionsViewModel : ViewModel() {
                             ).collect { videos ->
                                 Log.i(TAG, "Network emit received: ${videos.size} videos (shorts=${videos.count { it.isShort }}, regular=${videos.count { !it.isShort }})")
                                 if (videos.isNotEmpty()) {
+                                    lastFetchedChannelIds = channels.map { it.id }.toSet()
                                     updateVideos(videos)
                                     val entities = videos.map { video ->
                                         com.echotube.iad1tya.data.local.entity.SubscriptionFeedEntity(
@@ -158,8 +170,7 @@ class SubscriptionsViewModel : ViewModel() {
                                         )
                                     }
                                     launch(PerformanceDispatcher.diskIO) {
-                                        cacheDao.clearSubscriptionFeed()
-                                        cacheDao.insertSubscriptionFeed(entities)
+                                        cacheDao.replaceSubscriptionFeed(entities)
                                     }
                                 } else {
                                     Log.w(TAG, "Network emit was empty!")
@@ -370,9 +381,8 @@ class SubscriptionsViewModel : ViewModel() {
                             )
                         }
                         launch(PerformanceDispatcher.diskIO) {
-                            cacheDao.clearSubscriptionFeed()
-                            cacheDao.insertSubscriptionFeed(entities)
-                        }
+                                cacheDao.replaceSubscriptionFeed(entities)
+                            }
                     }
                     _uiState.update { it.copy(isLoading = false) }
                 }

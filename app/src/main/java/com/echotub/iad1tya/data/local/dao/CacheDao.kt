@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.echotube.iad1tya.data.local.entity.MusicHomeCacheEntity
 import com.echotube.iad1tya.data.local.entity.MusicHomeChipEntity
 import com.echotube.iad1tya.data.local.entity.SubscriptionFeedEntity
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CacheDao {
     // Subscriptions
-    @Query("SELECT * FROM subscription_feed_cache ORDER BY timestamp DESC LIMIT 200")
+    @Query("SELECT * FROM subscription_feed_cache ORDER BY timestamp DESC LIMIT 5000")
     fun getSubscriptionFeed(): Flow<List<SubscriptionFeedEntity>>
 
     /** Returns how many rows are currently in the cache. */
@@ -28,6 +29,17 @@ interface CacheDao {
 
     @Query("DELETE FROM subscription_feed_cache")
     suspend fun clearSubscriptionFeed()
+
+    /**
+     * Atomically replace the entire subscription feed cache.
+     * Using @Transaction ensures Room emits exactly ONE Flow update for the whole
+     * clear+insert operation — no empty intermediate state that would blank the UI.
+     */
+    @Transaction
+    suspend fun replaceSubscriptionFeed(videos: List<SubscriptionFeedEntity>) {
+        clearSubscriptionFeed()
+        insertSubscriptionFeed(videos)
+    }
 
     // Music
     @Query("SELECT * FROM music_home_cache ORDER BY orderBy ASC")
