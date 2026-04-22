@@ -10,8 +10,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -51,6 +55,8 @@ import coil.compose.AsyncImage
 import com.echotube.iad1tya.R
 import com.echotube.iad1tya.data.model.Video
 import com.echotube.iad1tya.ui.components.CompactVideoCard
+import com.echotube.iad1tya.ui.components.ShimmerGridVideoCard
+import com.echotube.iad1tya.ui.components.ShimmerVideoCardHorizontal
 import com.echotube.iad1tya.ui.components.VideoCardFullWidth
 import com.echotube.iad1tya.ui.theme.extendedColors
 import kotlinx.coroutines.launch
@@ -182,6 +188,9 @@ private fun ChannelContent(
         VideoFilter.Oldest -> allLiveVideos.reversed()
     }
 
+    val videosTabListState = remember(selectedFilter) { LazyListState() }
+    val liveTabListState = remember(selectedFilter) { LazyListState() }
+
     val tabTitles = listOf(
         stringResource(R.string.tab_videos),
         stringResource(R.string.tab_shorts),
@@ -194,6 +203,17 @@ private fun ChannelContent(
         initialPage = uiState.selectedTab.coerceIn(0, tabTitles.lastIndex),
         pageCount = { tabTitles.size }
     )
+
+    LaunchedEffect(selectedFilter, isLoadingAllVideos, sortedVideos.size) {
+        if (
+            pagerState.currentPage == 0 &&
+            selectedFilter == VideoFilter.Oldest &&
+            !isLoadingAllVideos &&
+            sortedVideos.isNotEmpty()
+        ) {
+            videosTabListState.scrollToItem(0)
+        }
+    }
 
     // Sync pager swipe → ViewModel tab selection
     LaunchedEffect(pagerState.currentPage) {
@@ -208,6 +228,7 @@ private fun ChannelContent(
     }
 
     val showFilterBar = pagerState.currentPage == 0 || pagerState.currentPage == 2
+    val shouldHoldVideosForFullLoad = pagerState.currentPage == 0 && selectedFilter == VideoFilter.Oldest && isLoadingAllVideos
 
     // Persist Videos-tab scroll position across navigation
     val videosListState = rememberLazyListState(
@@ -253,7 +274,7 @@ private fun ChannelContent(
                     FilterAndToggleBar(
                         selectedFilter = selectedFilter,
                         isGridView = isGridView,
-                        onFilterSelected = { selectedFilter = it },
+                        onFilterSelected = { filter -> selectedFilter = filter },
                         onToggleGridView = { coroutineScope.launch { preferences.setChannelIsGridView(!isGridView) } }
                     )
                 }
@@ -270,13 +291,14 @@ private fun ChannelContent(
             ) { page ->
                 when (page) {
                     0 -> {
-                        if (isLoadingAllVideos && sortedVideos.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize().padding(top = 64.dp),
-                                contentAlignment = Alignment.Center
-                            ) { CircularProgressIndicator() }
+                        if (shouldHoldVideosForFullLoad || (isLoadingAllVideos && sortedVideos.isEmpty())) {
+                            ChannelVideosSkeleton(
+                                isGridView = isGridView,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         } else {
                             LazyColumn(
+                                state = videosTabListState,
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 videosContent(null, sortedVideos, isGridView, onVideoClick)
@@ -295,7 +317,10 @@ private fun ChannelContent(
                                 contentAlignment = Alignment.Center
                             ) { CircularProgressIndicator() }
                         } else {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = liveTabListState,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
                                 liveContent(null, sortedLive, isGridView, onVideoClick)
                                 item { Spacer(Modifier.height(16.dp)) }
                             }
@@ -310,6 +335,35 @@ private fun ChannelContent(
                         item { Spacer(Modifier.height(16.dp)) }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChannelVideosSkeleton(
+    isGridView: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (isGridView) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(1),
+            modifier = modifier,
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(8) {
+                ShimmerGridVideoCard()
+            }
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(start = 0.dp, end = 0.dp, top = 8.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(8) {
+                ShimmerVideoCardHorizontal()
             }
         }
     }

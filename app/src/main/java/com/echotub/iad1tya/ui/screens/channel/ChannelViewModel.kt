@@ -48,6 +48,8 @@ class ChannelViewModel : ViewModel() {
 
     private val _isLoadingAllVideos = MutableStateFlow(false)
     val isLoadingAllVideos: StateFlow<Boolean> = _isLoadingAllVideos.asStateFlow()
+
+    private val _isLoadingAllLiveVideos = MutableStateFlow(false)
     
     var listScrollIndex: Int = 0
         private set
@@ -225,7 +227,13 @@ class ChannelViewModel : ViewModel() {
                 val videosTab = currentVideosTab
                 if (videosTab != null) {
                     viewModelScope.launch(PerformanceDispatcher.networkIO) {
-                        loadAllPages(videosTab, channelInfo, _videosAll)
+                        loadAllPages(
+                            tab = videosTab,
+                            channelInfo = channelInfo,
+                            target = _videosAll,
+                            loadingState = _isLoadingAllVideos,
+                            emitIncremental = true
+                        )
                     }
                 }
 
@@ -240,7 +248,13 @@ class ChannelViewModel : ViewModel() {
                 val liveTab = currentLiveTab
                 if (liveTab != null) {
                     viewModelScope.launch(PerformanceDispatcher.networkIO) {
-                        loadAllPages(liveTab, channelInfo, _liveAll)
+                        loadAllPages(
+                            tab = liveTab,
+                            channelInfo = channelInfo,
+                            target = _liveAll,
+                            loadingState = _isLoadingAllLiveVideos,
+                            emitIncremental = true
+                        )
                     }
                 }
 
@@ -356,16 +370,19 @@ class ChannelViewModel : ViewModel() {
     }
 
     /**
-     * Fetches all pages for a channel tab sequentially and emits results
-     * incrementally into [target]. This allows filters (Popular/Latest/Oldest)
-     * to operate on the full video list rather than just the first batch.
+     * Fetches all pages for a channel tab sequentially.
+     *
+     * When [emitIncremental] is false, results are published once at the end,
+     * so UI can switch from loading -> full list without chunked growth.
      */
     private suspend fun loadAllPages(
         tab: ListLinkHandler,
         channelInfo: ChannelInfo,
-        target: MutableStateFlow<List<Video>>
+        target: MutableStateFlow<List<Video>>,
+        loadingState: MutableStateFlow<Boolean>,
+        emitIncremental: Boolean
     ) {
-        _isLoadingAllVideos.value = true
+        loadingState.value = true
         try {
             val service = NewPipe.getService(0)
             val accumulated = mutableListOf<Video>()
@@ -374,7 +391,9 @@ class ChannelViewModel : ViewModel() {
             val initial = ChannelTabInfo.getInfo(service, tab)
             initial.relatedItems.filterIsInstance<StreamInfoItem>()
                 .mapTo(accumulated) { it.toChannelVideo(channelInfo) }
-            target.value = accumulated.toList()
+            if (emitIncremental) {
+                target.value = accumulated.toList()
+            }
 
             var nextPage = initial.nextPage
             var pagesLoaded = 1
@@ -385,15 +404,22 @@ class ChannelViewModel : ViewModel() {
                 val more = ChannelTabInfo.getMoreItems(service, tab, nextPage)
                 more.items.filterIsInstance<StreamInfoItem>()
                     .mapTo(accumulated) { it.toChannelVideo(channelInfo) }
-                target.value = accumulated.toList()
+                if (emitIncremental) {
+                    target.value = accumulated.toList()
+                }
                 nextPage = more.nextPage
                 pagesLoaded++
             }
+
+            target.value = accumulated.toList()
         } catch (e: Exception) {
             // Rate-limited or network error — user keeps whatever loaded so far
             Log.w(TAG, "Page loading stopped after rate limit or error", e)
+            if (target.value.isEmpty()) {
+                target.value = emptyList()
+            }
         } finally {
-            _isLoadingAllVideos.value = false
+            loadingState.value = false
         }
     }
 
