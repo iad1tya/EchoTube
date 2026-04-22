@@ -58,6 +58,7 @@ import android.widget.Toast
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withPermit
 import androidx.compose.foundation.lazy.items
+import com.echotube.iad1tya.ui.components.VideoQuickActionsBottomSheet
 import com.echotube.iad1tya.ui.components.rememberEchoTubeSheetState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -442,7 +443,17 @@ private fun PlaylistVideoItem(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+    var showQuickActions by remember { mutableStateOf(false) }
+
+    if (showQuickActions) {
+        VideoQuickActionsBottomSheet(
+            video = video,
+            onDismiss = { showQuickActions = false },
+            extraActionLabel = stringResource(R.string.remove_from_playlist_action),
+            onExtraAction = onRemove,
+            extraActionDestructive = true
+        )
+    }
 
     Row(
         modifier = modifier
@@ -534,7 +545,7 @@ private fun PlaylistVideoItem(
         // More Options
         Box {
             IconButton(
-                onClick = { showMenu = true },
+                onClick = { showQuickActions = true },
                 modifier = Modifier.size(24.dp)
             ) {
                 Icon(
@@ -542,26 +553,6 @@ private fun PlaylistVideoItem(
                     contentDescription = stringResource(R.string.more_options),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
-                )
-            }
-
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.remove_from_playlist_action)) },
-                    onClick = {
-                        onRemove()
-                        showMenu = false
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
                 )
             }
         }

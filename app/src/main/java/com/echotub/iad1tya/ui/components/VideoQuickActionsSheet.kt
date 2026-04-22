@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.WatchLater
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -69,6 +70,9 @@ fun VideoQuickActionsBottomSheet(
     onDownload: (() -> Unit)? = null,
     onNotInterested: () -> Unit = {},
     onChannelClick: ((String) -> Unit)? = null,
+    extraActionLabel: String? = null,
+    onExtraAction: (() -> Unit)? = null,
+    extraActionDestructive: Boolean = false,
     viewModel: QuickActionsViewModel = hiltViewModel()
 ) {
     val watchLaterIds by viewModel.watchLaterIds.collectAsState()
@@ -389,28 +393,56 @@ fun VideoQuickActionsBottomSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                 )
-                EchoTubeMenuGroup(
-                    items = listOf(
+                val optionItems = mutableListOf(
+                    EchoTubeMenuItemData(
+                        icon = { Icon(Icons.Outlined.Download, null) },
+                        title = { Text(stringResource(R.string.download)) },
+                        onClick = {
+                            if (onDownload != null) {
+                                onDownload()
+                            } else {
+                                viewModel.downloadVideo(video)
+                            }
+                            onDismiss()
+                        }
+                    ),
+                    EchoTubeMenuItemData(
+                        icon = { Icon(Icons.Outlined.Info, null) },
+                        title = { Text(stringResource(R.string.details_metadata)) },
+                        onClick = {
+                            showMediaInfo = true
+                        }
+                    )
+                )
+
+                if (extraActionLabel != null && onExtraAction != null) {
+                    optionItems.add(
                         EchoTubeMenuItemData(
-                            icon = { Icon(Icons.Outlined.Download, null) },
-                            title = { Text(stringResource(R.string.download)) },
+                            icon = {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    null,
+                                    tint = if (extraActionDestructive) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            title = {
+                                Text(
+                                    text = extraActionLabel,
+                                    color = if (extraActionDestructive) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
                             onClick = {
-                                if (onDownload != null) {
-                                    onDownload()
-                                } else {
-                                    viewModel.downloadVideo(video)
-                                }
+                                onExtraAction.invoke()
                                 onDismiss()
                             }
-                        ),
-                        EchoTubeMenuItemData(
-                            icon = { Icon(Icons.Outlined.Info, null) },
-                            title = { Text(stringResource(R.string.details_metadata)) },
-                            onClick = {
-                                showMediaInfo = true
-                            }
                         )
-                    ),
+                    )
+                }
+
+                EchoTubeMenuGroup(
+                    items = optionItems,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
