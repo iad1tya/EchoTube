@@ -98,6 +98,7 @@ fun NavGraphBuilder.flowAppGraph(
             }
         }
         HomeScreen(
+            currentTheme = currentTheme,
             onVideoClick = { video ->
                 if (video.isShort && !disableShortsPlayer) {
                     navController.navigate("shorts?startVideoId=${video.id}")
@@ -397,6 +398,7 @@ fun NavGraphBuilder.flowAppGraph(
         currentRoute.value = "settings/about"
         showBottomNav.value = false
         com.echotube.iad1tya.ui.screens.settings.AboutScreen(
+            currentTheme = currentTheme,
             onNavigateBack = { navController.popBackStack() },
             onNavigateToDonations = { navController.navigate("donations") }
         )

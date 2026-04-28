@@ -23,6 +23,7 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.echotube.iad1tya.ui.theme.ThemeMode
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.Image
 import androidx.compose.ui.Modifier
@@ -110,6 +111,7 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     onChannelClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
+    currentTheme: ThemeMode = ThemeMode.SYSTEM,
     viewModel: HomeViewModel = hiltViewModel(),
     notificationViewModel: NotificationViewModel = hiltViewModel()
 ) {
@@ -182,8 +184,13 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
+                        val isLightTheme = currentTheme == ThemeMode.LIGHT || 
+                                          currentTheme == ThemeMode.MINT_LIGHT || 
+                                          currentTheme == ThemeMode.ROSE_LIGHT || 
+                                          currentTheme == ThemeMode.SKY_LIGHT || 
+                                          currentTheme == ThemeMode.CREAM_LIGHT
                         Image(
-                            painter = painterResource(id = R.drawable.icon),
+                            painter = painterResource(id = if (isLightTheme) R.drawable.theme_icon_light else R.drawable.theme_icon_dark),
                             contentDescription = stringResource(R.string.app_name),
                             modifier = Modifier.size(44.dp)
                         )

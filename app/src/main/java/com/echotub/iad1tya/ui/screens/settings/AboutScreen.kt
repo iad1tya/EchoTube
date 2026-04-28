@@ -28,12 +28,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.echotube.iad1tya.R
+import com.echotube.iad1tya.ui.theme.ThemeMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
+    currentTheme: ThemeMode = ThemeMode.SYSTEM,
     onNavigateBack: () -> Unit,
     onNavigateToDonations: () -> Unit
 ) {
@@ -79,7 +81,7 @@ fun AboutScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                AboutHeroCard(versionName = versionName, versionCode = versionCode)
+                AboutHeroCard(currentTheme = currentTheme, versionName = versionName, versionCode = versionCode)
             }
 
             item {
@@ -197,13 +199,18 @@ private fun AboutSectionLabel(text: String) {
 }
 
 @Composable
-private fun AboutHeroCard(versionName: String, versionCode: String) {
+private fun AboutHeroCard(currentTheme: ThemeMode, versionName: String, versionCode: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val isLightTheme = currentTheme == ThemeMode.LIGHT || 
+                          currentTheme == ThemeMode.MINT_LIGHT || 
+                          currentTheme == ThemeMode.ROSE_LIGHT || 
+                          currentTheme == ThemeMode.SKY_LIGHT || 
+                          currentTheme == ThemeMode.CREAM_LIGHT
         Icon(
-            painter = painterResource(id = R.drawable.icon),
+            painter = painterResource(id = if (isLightTheme) R.drawable.theme_icon_light else R.drawable.theme_icon_dark),
             contentDescription = null,
             modifier = Modifier
                 .size(94.dp)
