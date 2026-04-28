@@ -67,6 +67,7 @@ fun EchoTubeApp(
     
     val preferences = remember { com.echotube.iad1tya.data.local.PlayerPreferences(context) }
     val supportPromptSeen by preferences.postOnboardingSupportPromptSeen.collectAsState(initial = false)
+    val supportDialogLastVersion by preferences.supportDialogLastVersion.collectAsState(initial = "")
     val isShortsNavigationEnabled by preferences.shortsNavigationEnabled.collectAsState(initial = true)
     val isSearchNavigationEnabled by preferences.searchNavigationEnabled.collectAsState(initial = false)
     val isCategoriesNavigationEnabled by preferences.categoriesNavigationEnabled.collectAsState(initial = false)
@@ -87,6 +88,18 @@ fun EchoTubeApp(
     LaunchedEffect(Unit) {
         EchoTubeNeuroEngine.initialize(context)
         needsOnboarding = EchoTubeNeuroEngine.needsOnboarding()
+        
+        // Check if app version has changed, reset support prompt seen if so
+        val packageInfo = try {
+            context.packageManager.getPackageInfo(context.packageName, 0)
+        } catch (e: Exception) {
+            null
+        }
+        val currentVersion = packageInfo?.versionName ?: ""
+        if (currentVersion != supportDialogLastVersion && supportDialogLastVersion.isNotEmpty()) {
+            // Version changed, reset support prompt seen flag
+            preferences.setPostOnboardingSupportPromptSeen(false)
+        }
     }
 
     HandleDeepLinks(deeplinkVideoId, isShort, navController, onDeeplinkConsumed)
@@ -310,6 +323,14 @@ fun EchoTubeApp(
                     showPostOnboardingSupportPopup = false
                     coroutineScope.launch {
                         preferences.setPostOnboardingSupportPromptSeen(true)
+                        // Store current version so dialog shows again on next update
+                        val packageInfo = try {
+                            context.packageManager.getPackageInfo(context.packageName, 0)
+                        } catch (e: Exception) {
+                            null
+                        }
+                        val currentVersion = packageInfo?.versionName ?: ""
+                        preferences.setSupportDialogLastVersion(currentVersion)
                     }
                 }
             )
@@ -399,17 +420,8 @@ private fun PostOnboardingSupportDialog(
                     OutlinedButton(onClick = { openLink("https://github.com/sponsors/iad1tya") }, modifier = Modifier.fillMaxWidth()) {
                         Text("GitHub Sponsors")
                     }
-                    OutlinedButton(onClick = { openLink("https://github.com/iad1tya/EchoTube") }, modifier = Modifier.fillMaxWidth()) {
-                        Text("GitHub Repo")
-                    }
-                    OutlinedButton(onClick = { openLink("https://instagram.com/iad1tya") }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Instagram")
-                    }
-                    OutlinedButton(onClick = { openLink("https://x.com/xad1tya") }, modifier = Modifier.fillMaxWidth()) {
-                        Text("X Profile")
-                    }
-                    OutlinedButton(onClick = { openLink("https://github.com/iad1tya") }, modifier = Modifier.fillMaxWidth()) {
-                        Text("GitHub Profile")
+                    OutlinedButton(onClick = { openLink("https://t.me/EchoTubeApp") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Telegram")
                     }
                 }
             }

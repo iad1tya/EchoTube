@@ -153,6 +153,7 @@ class PlayerPreferences(private val context: Context) {
 
         // One-time support prompt after onboarding
         val POST_ONBOARDING_SUPPORT_PROMPT_SEEN = booleanPreferencesKey("post_onboarding_support_prompt_seen")
+        val SUPPORT_DIALOG_LAST_VERSION = stringPreferencesKey("support_dialog_last_version")
 
         // App icon — stores the component suffix of the currently selected launcher icon
         val APP_ICON_SUFFIX = stringPreferencesKey("app_icon_suffix")
@@ -935,6 +936,15 @@ class PlayerPreferences(private val context: Context) {
     suspend fun setPostOnboardingSupportPromptSeen(seen: Boolean) {
         context.playerPreferencesDataStore.edit { preferences ->
             preferences[Keys.POST_ONBOARDING_SUPPORT_PROMPT_SEEN] = seen
+        }
+    }
+
+    val supportDialogLastVersion: Flow<String> = context.playerPreferencesDataStore.data
+        .map { preferences -> preferences[Keys.SUPPORT_DIALOG_LAST_VERSION] ?: "" }
+
+    suspend fun setSupportDialogLastVersion(version: String) {
+        context.playerPreferencesDataStore.edit { preferences ->
+            preferences[Keys.SUPPORT_DIALOG_LAST_VERSION] = version
         }
     }
 

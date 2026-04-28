@@ -24,8 +24,8 @@ android {
         applicationId = "com.echotube.iad1tya"
         minSdk = 21
         targetSdk = 34
-        versionCode = 16
-        versionName = "1.1.2"
+        versionCode = 19
+        versionName = "1.2"
 
         val poTokenGoogleApiKey = (project.findProperty("poTokenGoogleApiKey") as? String)
             ?: rootLocalProperties.getProperty("poTokenGoogleApiKey")

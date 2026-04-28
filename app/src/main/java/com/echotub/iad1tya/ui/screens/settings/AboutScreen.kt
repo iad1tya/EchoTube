@@ -112,13 +112,6 @@ fun AboutScreen(
                     )
                     AboutRowDivider()
                     AboutRowWithPainter(
-                        iconPainter = painterResource(id = R.drawable.ic_discord),
-                        title = "Discord",
-                        subtitle = "discord.gg/d6VPTS5Y4W",
-                        onClick = { openUrl(context, "https://discord.gg/d6VPTS5Y4W") }
-                    )
-                    AboutRowDivider()
-                    AboutRowWithPainter(
                         iconPainter = painterResource(id = R.drawable.ic_telegram),
                         title = "Telegram",
                         subtitle = "t.me/EchoTubeApp",
@@ -285,6 +278,13 @@ private fun AboutSupportSection(onDonateClick: () -> Unit) {
                 title = "GitHub Sponsor",
                 subtitle = "github.com/sponsors/iad1tya",
                 onClick = { openUrl(context, "https://github.com/sponsors/iad1tya") }
+            )
+            AboutRowDivider()
+            AboutRowWithPainterWhiteIcon(
+                iconPainter = painterResource(id = R.drawable.ic_telegram),
+                title = "Telegram",
+                subtitle = "t.me/EchoTubeApp",
+                onClick = { openUrl(context, "https://t.me/EchoTubeApp") }
             )
 
             Spacer(modifier = Modifier.height(12.dp))

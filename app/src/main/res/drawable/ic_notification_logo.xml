@@ -2,4 +2,4 @@
     android:antialias="true"
     android:filter="true"
     android:gravity="center"
-    android:src="@drawable/icon" />
+    android:src="@drawable/themed" />
