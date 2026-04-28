@@ -132,8 +132,6 @@ Follow [FIREBASE_SETUP.md](FIREBASE_SETUP.md) to configure Analytics and Crashly
 Join the community for updates, discussions, and help.
 
 <div align="center">
-  <a href="https://discord.gg/d6VPTS5Y4W"><img src="assets/readme/discord.png" alt="Discord" width="130"/></a>
-  &nbsp;
   <a href="https://t.me/EchoTubeApp"><img src="assets/readme/telegram.png" alt="Telegram" width="130"/></a>
 </div>
 
