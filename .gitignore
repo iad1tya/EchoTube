@@ -1,44 +1,89 @@
-# macOS
-.DS_Store
+# Built application files
+*.apk
+*.aab
+*.ap_
 
-# Android/Gradle build outputs
-.gradle/
-build/
-**/build/
-.buildOutputCleanup
-.cxx/
-externalNativeBuild/
-captures/
+# Files for the ART/Dalvik VM
+*.dex
 
-# Kotlin/Java artifacts
+# Java class files
 *.class
 *.jar
 *.war
 *.ear
 *.hprof
 
-# Local machine/project config
-local.properties
-*.keystore
-*.jks
-*.pem
-*.p12
+# Generated files
+bin/
+gen/
+out/
 
-# Firebase/Google service credentials (keep private)
+# Gradle files
+.gradle/
+build/
+**/build/
+.buildOutputCleanup
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log Files
+*.log
+logs/
+
+# Android Studio Navigation editor temp files
+.navigation/
+
+# Android Studio captures folder
+captures/
+
+# IntelliJ
+*.iml
+.idea/
+!.idea/codeStyles/
+!.idea/vcs.xml
+
+# Keystore files
+# Note: If tube.jks is already committed, Git will continue to track it 
+# unless you explicitly run `git rm --cached tube.jks`.
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Firebase / Google Services
+# Same applies to google-services.json if it is already in the repository
 google-services.json
 **/google-services.json
-
-# Android Studio / IntelliJ
-.idea/
-*.iml
-*.ipr
-*.iws
+GoogleService-Info.plist
 
 # VS Code
 .vscode/
 
-# Logs
-*.log
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Vim/Emacs/Editor temporary files
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+.tmp/
+tmp/
+temp/
+
+# Native build
+.cxx/
+externalNativeBuild/
+obj/
 
 # Generated release metadata
 output-metadata.json
