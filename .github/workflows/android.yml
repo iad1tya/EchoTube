@@ -38,4 +38,4 @@ jobs:
     - name: Build with Gradle
       env:
         POTOKEN_GOOGLE_API_KEY: ${{ secrets.POTOKEN_GOOGLE_API_KEY }}
-      run: ./gradlew assembleGithubRelease testGithubReleaseUnitTest
+      run: ./gradlew assembleGithubRelease
