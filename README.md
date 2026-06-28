@@ -22,20 +22,6 @@ EchoTube delivers a fast and modern video experience powered by a fully local re
 
 ---
 
-## Screenshots
-
-<div align="center">
-  <img src="Screenshot/sc_1.png" alt="Library Screen" width="200"/>
-  <img src="Screenshot/sc_2.png" alt="Subscriptions Screen" width="200"/>
-  <img src="Screenshot/sc_3.png" alt="Shorts Screen" width="200"/>
-  <img src="Screenshot/sc_4.png" alt="EchoTube Control Center" width="200"/>
-  <img src="Screenshot/sc_5.png" alt="Video Player" width="200"/>
-  <img src="Screenshot/sc_6.png" alt="Channel Screen" width="200"/>
-  <img src="Screenshot/sc_7.png" alt="Home Screen" width="200"/>
-</div>
-
----
-
 ## Features
 
 ### Video
