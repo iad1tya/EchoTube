@@ -53,7 +53,7 @@ jobs:
         STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleGithubRelease
 
     - name: Get Tag Name
       id: tag
@@ -67,4 +67,4 @@ jobs:
         prerelease: false
         generate_release_notes: true
         files: |
-          app/build/outputs/apk/*/release/*.apk
+          app/build/outputs/apk/github/release/*.apk
